@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+
 #include "HuntersCharacter.generated.h"
 
 class UInputComponent;
@@ -38,13 +39,15 @@ class AHuntersCharacter : public ACharacter
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	class UInputAction* MoveAction;
-
 	
 public:
 	AHuntersCharacter();
 
 protected:
 	virtual void BeginPlay();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "EOS")
+    TSubclassOf<UUserWidget> MainMenu;
 
 public:
 		

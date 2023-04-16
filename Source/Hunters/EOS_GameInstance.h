@@ -7,11 +7,15 @@
 #include "EOS_GameInstance.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class HUNTERS_API UEOS_GameInstance : public UGameInstance
 {
 	GENERATED_BODY()
-	
+
+	UFUNCTION(BlueprintCallable, Category = EOSFunction)
+	void LoginWithEOS(FString ID, FString Token, FString LoginType);
+
+	void LoginWithEOS_Return(int32 LocalUserNum, bool bWasSuccess, const FUniqueNetId &UserId, const FString &Error);
 };
