@@ -4,6 +4,7 @@
 #include "OnlineSubsystemUtils.h"
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineIdentityInterface.h"
+#include "OnlineSessionSettings.h"
 
 void UEOS_GameInstance::LoginWithEOS(FString ID, FString Token, FString LoginType)
 {
@@ -17,6 +18,7 @@ void UEOS_GameInstance::LoginWithEOS(FString ID, FString Token, FString LoginTyp
             AccountDetails.Id = ID;
             AccountDetails.Token = Token;
             AccountDetails.Type = LoginType;
+
             identityPointerRef->OnLoginCompleteDelegates->AddUObject(this, &UEOS_GameInstance::LoginWithEOS_Return);
             identityPointerRef->Login(0, AccountDetails);
         }
@@ -26,6 +28,8 @@ void UEOS_GameInstance::LoginWithEOS(FString ID, FString Token, FString LoginTyp
 FString UEOS_GameInstance::GetPlayerUsername()
 {
     IOnlineSubsystem *SubsystemReference = Online::GetSubsystem(this->GetWorld());
+
+    
     if (SubsystemReference)
     {
         IOnlineIdentityPtr identityPointerRef = SubsystemReference->GetIdentityInterface();

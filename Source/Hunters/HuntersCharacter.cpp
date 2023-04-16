@@ -9,7 +9,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/WidgetComponent.h"
-#include "UMG.h"
 
 #include "GameFramework/PlayerController.h" // for APlayerController class
 
@@ -79,8 +78,8 @@ void AHuntersCharacter::BeginPlay()
 	}
 }
 
-void AddMainMenu() {
-	
+void AddMainMenu()
+{
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
