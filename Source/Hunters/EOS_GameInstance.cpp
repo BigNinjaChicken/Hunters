@@ -4,7 +4,7 @@
 #include "OnlineSubsystemUtils.h"
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineIdentityInterface.h"
-#include "OnlineSessionSettings.h"
+#include "Kismet/GameplayStatics.h"
 
 void UEOS_GameInstance::LoginWithEOS(FString ID, FString Token, FString LoginType)
 {
@@ -29,7 +29,6 @@ FString UEOS_GameInstance::GetPlayerUsername()
 {
     IOnlineSubsystem *SubsystemReference = Online::GetSubsystem(this->GetWorld());
 
-    
     if (SubsystemReference)
     {
         IOnlineIdentityPtr identityPointerRef = SubsystemReference->GetIdentityInterface();
@@ -71,4 +70,45 @@ void UEOS_GameInstance::LoginWithEOS_Return(int32 LocalUserNum, bool bWasSuccess
     {
         UE_LOG(LogTemp, Error, TEXT("Login Fail Reason - %s"), *Error)
     }
+}
+
+void UEOS_GameInstance::OnCreateSessionCompleted(FName SessionName, bool bWasSuccessful)
+{
+    if (bWasSuccessful)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ServerTravel"))
+        GetWorld()->ServerTravel(OpenLevelText);
+    }
+}
+
+void UEOS_GameInstance::CreateEOSSession(bool bIsDeticatedServer, bool bIsLanServer, int32 NumberOfPublicConnections)
+{
+    IOnlineSubsystem *SubsystemRef = Online::GetSubsystem(this->GetWorld());
+    if (SubsystemRef)
+    {
+        IOnlineSessionPtr SessionPtrRef = SubsystemRef->GetSessionInterface();
+        if (SessionPtrRef)
+        {
+            FOnlineSessionSettings SessionCreationInfo;
+            SessionCreationInfo.bIsDedicated = bIsDeticatedServer;
+            SessionCreationInfo.bAllowInvites = true;
+            SessionCreationInfo.bIsLANMatch = bIsLanServer;
+            SessionCreationInfo.NumPublicConnections = NumberOfPublicConnections;
+            SessionCreationInfo.bUseLobbiesIfAvailable = false;
+            SessionCreationInfo.bUseLobbiesVoiceChatIfAvailable = false;
+            SessionCreationInfo.bUsesPresence = false;
+            SessionCreationInfo.bShouldAdvertise = true;
+            SessionCreationInfo.Set(SEARCH_KEYWORDS, FString("RandomHi"), EOnlineDataAdvertisementType::ViaOnlineService);
+            SessionPtrRef->OnCreateSessionCompleteDelegates.AddUObject(this, &UEOS_GameInstance::OnCreateSessionCompleted);
+            SessionPtrRef->CreateSession(0, FName("MainSession"), SessionCreationInfo);
+        }
+    }
+}
+
+void UEOS_GameInstance::FindSessionAndJoin()
+{
+}
+
+void UEOS_GameInstance::JoinSession()
+{
 }
