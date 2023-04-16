@@ -17,5 +17,11 @@ class HUNTERS_API UEOS_GameInstance : public UGameInstance
 	UFUNCTION(BlueprintCallable, Category = EOSFunction)
 	void LoginWithEOS(FString ID, FString Token, FString LoginType);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = EOSFunction)
+	FString GetPlayerUsername();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = EOSFunction)
+	bool IsPlayerLoggedIn();
+
 	void LoginWithEOS_Return(int32 LocalUserNum, bool bWasSuccess, const FUniqueNetId &UserId, const FString &Error);
 };

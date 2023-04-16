@@ -23,6 +23,40 @@ void UEOS_GameInstance::LoginWithEOS(FString ID, FString Token, FString LoginTyp
     }
 }
 
+FString UEOS_GameInstance::GetPlayerUsername()
+{
+    IOnlineSubsystem *SubsystemReference = Online::GetSubsystem(this->GetWorld());
+    if (SubsystemReference)
+    {
+        IOnlineIdentityPtr identityPointerRef = SubsystemReference->GetIdentityInterface();
+        if (identityPointerRef)
+        {
+            if (identityPointerRef->GetLoginStatus(0) == ELoginStatus::LoggedIn)
+            {
+                return identityPointerRef->GetPlayerNickname(0);
+            }
+        }
+    }
+    return FString();
+}
+
+bool UEOS_GameInstance::IsPlayerLoggedIn()
+{
+    IOnlineSubsystem *SubsystemReference = Online::GetSubsystem(this->GetWorld());
+    if (SubsystemReference)
+    {
+        IOnlineIdentityPtr identityPointerRef = SubsystemReference->GetIdentityInterface();
+        if (identityPointerRef)
+        {
+            if (identityPointerRef->GetLoginStatus(0) == ELoginStatus::LoggedIn)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void UEOS_GameInstance::LoginWithEOS_Return(int32 LocalUserNum, bool bWasSuccess, const FUniqueNetId &UserId, const FString &Error)
 {
     if (bWasSuccess)
