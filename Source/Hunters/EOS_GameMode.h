@@ -7,13 +7,17 @@
 #include "EOS_GameMode.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class HUNTERS_API AEOS_GameMode : public AGameModeBase
 {
 	GENERATED_BODY()
-	
+
 public:
-	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void PostLogin(APlayerController *NewPlayer) override;
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 };

@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "RoomOption.h"
 
 #include "Components/BoxComponent.h"
@@ -8,29 +7,33 @@
 // Sets default values
 ARoomOption::ARoomOption()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+    // Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+    PrimaryActorTick.bCanEverTick = true;
 
-	// Create a box component
-	RoomSelectionBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("RoomSelection"));
+    SelectionBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("SelectionBoxComponent"));
+    RootComponent = SelectionBoxComponent;
+}
 
-	// Set the scale of the box component
-	RoomSelectionBoxComponent->SetRelativeScale3D(FVector(3, 3, 3));
+void ARoomOption::OnConstruction(const FTransform &Transform)
+{
+    Super::OnConstruction(Transform);
+    
+    SelectionBoxComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+    SelectionBoxComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+    SelectionBoxComponent->SetLineThickness(10.0f);
 
-	RoomSelectionBoxComponent->SetCollisionProfileName(TEXT("NoCollision"));
+    // Set the size of the box selection area based on the BoxExtent variable
+    SelectionBoxComponent->SetBoxExtent(BoxExtent);
 }
 
 // Called when the game starts or when spawned
 void ARoomOption::BeginPlay()
 {
-	Super::BeginPlay();
-	
+    Super::BeginPlay();
 }
 
 // Called every frame
 void ARoomOption::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
-
+    Super::Tick(DeltaTime);
 }
-

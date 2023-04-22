@@ -3,7 +3,22 @@
 #include "EOS_GameMode.h"
 #include "OnlineSubsystemUtils.h"
 #include "Interfaces/OnlineIdentityInterface.h"
+#include "Kismet/GameplayStatics.h"
+#include "LevelGeneration.h"
 #include "OnlineSubsystem.h"
+
+void AEOS_GameMode::BeginPlay()
+{
+    Super::BeginPlay();
+
+    AActor *FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), ALevelGeneration::StaticClass());
+
+    // Check if any actors were found
+    if (!FoundActor)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Require Class ALevelGeneration"));
+    }
+}
 
 void AEOS_GameMode::PostLogin(APlayerController *NewPlayer)
 {
