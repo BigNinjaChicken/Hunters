@@ -17,7 +17,7 @@
 
 APlayerCharacter::APlayerCharacter()
 {
-	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	UCharacterMovementComponent *MovementComponent = GetCharacterMovement();
 	DefaultMaxWalkingSpeed = MovementComponent->MaxWalkSpeed;
 
 	// Set size for collision capsule
@@ -47,13 +47,15 @@ void APlayerCharacter::BeginPlay()
 	// Add Input Mapping Context
 	if (APlayerController *PlayerController = Cast<APlayerController>(Controller))
 	{
+		// Set the input mode to game only
+		PlayerController->SetInputMode(FInputModeGameAndUI());
+
 		if (UEnhancedInputLocalPlayerSubsystem *Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 			Subsystem->AddMappingContext(ExtraMovementMappingContext, 1);
 		}
 	}
-	
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
@@ -105,37 +107,37 @@ void APlayerCharacter::Look(const FInputActionValue &Value)
 	}
 }
 
-void APlayerCharacter::Sprint(const FInputActionValue& Value)
+void APlayerCharacter::Sprint(const FInputActionValue &Value)
 {
-    UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
-    if (!MovementComponent)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No movement component found"));
-        return;
-    }
+	UCharacterMovementComponent *MovementComponent = GetCharacterMovement();
+	if (!MovementComponent)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No movement component found"));
+		return;
+	}
 
-    if (bIsSprinting)
-    {
-        MovementComponent->MaxWalkSpeed = DefaultMaxWalkingSpeed;
-    }
-    else
-    {
-        MovementComponent->MaxWalkSpeed *= SprintingMultiplier;
-    }
+	if (bIsSprinting)
+	{
+		MovementComponent->MaxWalkSpeed = DefaultMaxWalkingSpeed;
+	}
+	else
+	{
+		MovementComponent->MaxWalkSpeed *= SprintingMultiplier;
+	}
 
-    bIsSprinting = !bIsSprinting;
+	bIsSprinting = !bIsSprinting;
 }
 
 void APlayerCharacter::Talk(const FInputActionValue &Value)
 {
 	// Play Sound
-	AActor* SelfActor = GetOwner();
+	AActor *SelfActor = GetOwner();
 
 	if (!TalkSoundCue)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No sound cue component found"));
-        return;
-    }
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No sound cue component found"));
+		return;
+	}
 
 	UGameplayStatics::PlaySoundAtLocation(SelfActor, TalkSoundCue, SelfActor->GetActorLocation());
 }

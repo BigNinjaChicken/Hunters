@@ -56,7 +56,7 @@ void ALevelGeneration::BeginPlay()
     LeftRoomsPlaced = 0;
     RightRoomsPlaced = 0;
 
-    for (int i = 10; i > 0; i--)
+    for (int i = RoomAmount; i > 0; i--)
     {
         AActor *RandomRoom = nullptr;
         do

@@ -25,7 +25,7 @@ public:
     int RightRoomsPlaced = 0;
 
     UPROPERTY(EditAnywhere, meta = (MakeEditWidget = true), Category = "Generation")
-    int RoomAmount = 2;
+    int RoomAmount = 50;
 
     // UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Generation", meta = (AllowPrivateAccess = "true"))
 	// class ARoomPlacement *RoomPlacementActor;
