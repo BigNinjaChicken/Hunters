@@ -48,7 +48,9 @@ void APlayerCharacter::BeginPlay()
 	if (APlayerController *PlayerController = Cast<APlayerController>(Controller))
 	{
 		// Set the input mode to game only
-		PlayerController->SetInputMode(FInputModeGameAndUI());
+		FInputModeGameOnly InputMode;
+		PlayerController->SetInputMode(InputMode);
+		PlayerController->bShowMouseCursor = false;
 
 		if (UEnhancedInputLocalPlayerSubsystem *Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{

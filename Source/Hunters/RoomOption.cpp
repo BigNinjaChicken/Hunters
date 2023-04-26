@@ -12,6 +12,11 @@ ARoomOption::ARoomOption()
 
     SelectionBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("SelectionBoxComponent"));
     RootComponent = SelectionBoxComponent;
+    
+    SpawnAI.SetNum(5);
+    for (int32 i = 0; i < SpawnAI.Num(); i++) {
+        SpawnAI[i] = FVector(100.0f, 100.0f, 100.0f);
+    }
 }
 
 void ARoomOption::OnConstruction(const FTransform &Transform)

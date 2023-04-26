@@ -23,6 +23,9 @@ public:
     UPROPERTY(EditAnywhere, Category = "Generation", meta = (MakeEditWidget = true))
     FVector BoxExtent = FVector(100.0f, 100.0f, 100.0f);
 
+    UPROPERTY(EditAnywhere, Category = "AI", meta = (MakeEditWidget = true))
+    TArray<FVector> SpawnAI;
+
     UPROPERTY(EditAnywhere, Category = "Generation", meta = (MakeEditWidget = true))
     FVector StartLocation = FVector::ZeroVector;
 
@@ -36,7 +39,7 @@ public:
     ERoomType RoomType;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Generation", meta = (AllowPrivateAccess = "true"))
-    TArray<AActor*> AllRooms;
+    TArray<AActor*> RoomActors;
 
 protected:
     virtual void OnConstruction(const FTransform& Transform) override;
