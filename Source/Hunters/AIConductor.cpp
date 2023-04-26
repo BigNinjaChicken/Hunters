@@ -2,6 +2,11 @@
 
 
 #include "AIConductor.h"
+#include "NavigationSystem.h"
+#include "PlayerCharacter.h"
+#include "MyAIController.h"
+#include "Kismet/GameplayStatics.h"
+#include "NavigationInvokerComponent.h"
 
 // Sets default values
 AAIConductor::AAIConductor()
@@ -16,6 +21,12 @@ void AAIConductor::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// Spawn the AI controller and attach it to the AI character
+    PassengerController = GetWorld()->SpawnActor<AMyAIController>(AMyAIController::StaticClass());
+    if (PassengerController)
+    {
+        PassengerController->Possess(this);
+    }
 }
 
 // Called every frame
@@ -24,11 +35,3 @@ void AAIConductor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
-
-// Called to bind functionality to input
-void AAIConductor::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-}
-

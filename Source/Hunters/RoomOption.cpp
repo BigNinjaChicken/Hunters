@@ -12,11 +12,6 @@ ARoomOption::ARoomOption()
 
     SelectionBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("SelectionBoxComponent"));
     RootComponent = SelectionBoxComponent;
-    
-    SpawnAI.SetNum(5);
-    for (int32 i = 0; i < SpawnAI.Num(); i++) {
-        SpawnAI[i] = FVector(100.0f, 100.0f, 100.0f);
-    }
 }
 
 void ARoomOption::OnConstruction(const FTransform &Transform)
@@ -29,6 +24,13 @@ void ARoomOption::OnConstruction(const FTransform &Transform)
 
     // Set the size of the box selection area based on the BoxExtent variable
     SelectionBoxComponent->SetBoxExtent(BoxExtent);
+
+    PassengerSpawnLocations.SetNum(SpawnLocationAmount);
+    for (int32 i = 0; i < SpawnLocationAmount; i++) {
+        if (PassengerSpawnLocations[i].IsZero()) {
+            PassengerSpawnLocations[i] = FVector(100.0f, 100.0f, 100.0f);
+        }
+    }
 }
 
 // Called when the game starts or when spawned

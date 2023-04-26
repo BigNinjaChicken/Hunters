@@ -3,7 +3,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "RoomOption.h"
+#include "PassengerCharacter.h"
 #include "RoomPlacement.h"
+#include "AIConductor.h"
 
 #include "LevelGeneration.generated.h"
 
@@ -49,6 +51,14 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Generation", meta = (AllowPrivateAccess = "true"))
     class ANavMeshBoundsVolume* NavMeshBoundsVolume;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Generation", meta = (AllowPrivateAccess = "true"))
+    TSubclassOf<APassengerCharacter> PassengerCharacterBlueprint;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Generation", meta = (AllowPrivateAccess = "true"))
+    TSubclassOf<AAIConductor> AIConductorBlueprint;
+
+    void SpawnAI();
+
     /** Timer handle to start the game */
     UPROPERTY()
     FTimerHandle StartGameTimerHandle;
@@ -57,23 +67,15 @@ public:
     void StartGame();
 
     /** Place a room */
-    void PlaceRoom(ARoomOption *RoomOption, int i);
+    void PlaceRoom(ARoomOption *RoomOption, int i, bool bShouldSpawnBoss);
 
     /** Duplicate an actor */
     AActor *DuplicateActor(AActor *OriginalActor);
 
-    /** Actor to spawn */
-    UPROPERTY(EditDefaultsOnly, Category = "Generation")
-    TSubclassOf<AActor> ActorToSpawn;
-
-    /** Enemy actor to spawn */
-    UPROPERTY(EditDefaultsOnly, Category = "Generation")
-    TSubclassOf<AActor> EnemyActorToSpawn;
-
 protected:
     virtual void BeginPlay() override;
     /** Choose a random room */
-    AActor *ChooseRandomRoom();
+    AActor *ChooseRandomRoom(bool bIsBossRoom);
 
     /** Spawn actors */
     void SpawnActors(TSubclassOf<AActor> InputActor, ARoomOption *Room);

@@ -8,7 +8,9 @@
 #include "Components/PrimitiveComponent.h"
 #include "TimerManager.h"
 #include "PassengerCharacter.h"
+#include "AIConductor.h"
 #include "AIController.h"
+#include "EngineUtils.h"
 
 // Sets default values
 ALevelGeneration::ALevelGeneration()
@@ -81,13 +83,50 @@ void ALevelGeneration::BeginPlay()
 {
     Super::BeginPlay();
 
+    SpawnAI();
 
-    // Start: SPAWN ENEMIES AND PASSIVES
-    TArray<AActor *> Actors;
-    UGameplayStatics::GetAllActorsOfClass(this, ARoomOption::StaticClass(), Actors);
+    // Cache all room options for faster retrieval
+    CacheAllRoomOptions();
+
+    // Initialize variables to track the number of rooms placed on each side
+    LeftRoomsPlaced = 0;
+    RightRoomsPlaced = 0;
+
+    // Generate the level by placing rooms
+    for (int RoomIndex = RoomAmount; RoomIndex > 0; RoomIndex--)
+    {
+        bool bShouldSpawnBoss = RoomIndex == RoomAmount / 2;
+
+        // Boss Room Condition
+        AActor *RandomRoom = ChooseRandomRoom(bShouldSpawnBoss);
+
+        // Place the chosen room
+        PlaceRoom(Cast<ARoomOption>(RandomRoom), RoomIndex, bShouldSpawnBoss);
+    }
+
+    // Start the game after a delay of 15 seconds
+    GetWorldTimerManager().SetTimer(StartGameTimerHandle, this, &ALevelGeneration::StartGame, 15.0f, false);
+}
+
+void ALevelGeneration::SpawnAI()
+{
+    if (!PassengerCharacterBlueprint)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No Inputed PassengerCharacter"));
+        return;
+    }
+
+    if (!AIConductorBlueprint)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No Inputed AIConductorBlueprint"));
+        return;
+    }
+
+    TArray<AActor *> FoundActors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomOption::StaticClass(), FoundActors);
 
     TArray<ARoomOption *> RoomOptions;
-    for (AActor *Actor : Actors)
+    for (AActor *Actor : FoundActors)
     {
         ARoomOption *RoomOption = Cast<ARoomOption>(Actor);
         if (RoomOption != nullptr)
@@ -98,56 +137,65 @@ void ALevelGeneration::BeginPlay()
 
     for (ARoomOption *Room : RoomOptions)
     {
-        
-    }
-    // End: SPAWN ENEMIES AND PASSIVES
+        // Spawn PassengerCharacterBlueprint
+        const int32 AmountAISpawning = FMath::RandRange(1, Room->PassengerSpawnLocations.Num());
 
-    // Cache all room options for faster retrieval
-    // CacheAllRoomOptions();
-
-    // Initialize variables to track the number of rooms placed on each side
-    LeftRoomsPlaced = 0;
-    RightRoomsPlaced = 0;
-
-    // Generate the level by placing rooms
-    for (int RoomIndex = RoomAmount; RoomIndex > 0; RoomIndex--)
-    {
-        // Choose a random room from the available options
-        AActor *RandomRoom = ChooseRandomRoom();
-
-        // Place the chosen room
-        PlaceRoom(Cast<ARoomOption>(RandomRoom), RoomIndex);
-    }
-
-    // Start the game after a delay of 15 seconds
-    GetWorldTimerManager().SetTimer(StartGameTimerHandle, this, &ALevelGeneration::StartGame, 15.0f, false);
-}
-
-AActor *ALevelGeneration::ChooseRandomRoom()
-{
-    AActor *RandomRoom = nullptr;
-    do
-    {
-        // Retrieve all available room options
-        TArray<AActor *> RoomOptions;
-        UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomOption::StaticClass(), RoomOptions);
-
-        // Handle the case where no room options are found
-        if (RoomOptions.Num() == 0)
+        for (int i = 0; i < AmountAISpawning; i++)
         {
-            UE_LOG(LogTemp, Error, TEXT("No actors of class ARoomOption found"));
-            return nullptr;
+            const int32 SpawnIndex = FMath::RandRange(0, Room->PassengerSpawnLocations.Num() - 1);
+            const FVector SpawnLocation = Room->PassengerSpawnLocations[SpawnIndex] + Room->GetActorLocation();
+            const FRotator SpawnRotation = FRotator(0.0f, 0.0f, 0.0f);
+
+            APassengerCharacter *Passenger = GetWorld()->SpawnActor<APassengerCharacter>(PassengerCharacterBlueprint, SpawnLocation, SpawnRotation);
         }
 
-        // Choose a random room from the available options
-        int32 RandomIndex = FMath::RandRange(0, RoomOptions.Num() - 1);
-        RandomRoom = RoomOptions[RandomIndex];
+        // Spawn AIConductorBlueprint
+        const FVector SpawnLocation = Room->ConductorSpawnLocation + Room->GetActorLocation();
+        const FRotator SpawnRotation = FRotator(0.0f, 0.0f, 0.0f);
 
-        // Ensure that there is only one left room and one right room
-        if ((LeftRoomsPlaced == 1 && Cast<ARoomOption>(RandomRoom)->RoomType == ERoomType::Left) ||
-            (RightRoomsPlaced == 1 && Cast<ARoomOption>(RandomRoom)->RoomType == ERoomType::Right))
+        AAIConductor *Passenger = GetWorld()->SpawnActor<AAIConductor>(AIConductorBlueprint, SpawnLocation, SpawnRotation);
+    }
+}
+
+AActor *ALevelGeneration::ChooseRandomRoom(bool bIsBossRoom)
+{
+    AActor *RandomRoom = nullptr;
+    // Retrieve all available room options
+    TArray<AActor *> RoomOptions;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomOption::StaticClass(), RoomOptions);
+
+    // Handle the case where no room options are found
+    if (RoomOptions.Num() == 0)
+    {
+        UE_LOG(LogTemp, Error, TEXT("No actors of class ARoomOption found"));
+        return nullptr;
+    }
+
+    do
+    {
+        if (bIsBossRoom)
         {
-            RandomRoom = nullptr;
+            for (AActor *Room : RoomOptions)
+            {
+                if (Cast<ARoomOption>(Room)->RoomType == ERoomType::Straight)
+                {
+                    RandomRoom = Room;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            // Choose a random room from the available options
+            int32 RandomIndex = FMath::RandRange(0, RoomOptions.Num() - 1);
+            RandomRoom = RoomOptions[RandomIndex];
+
+            // Ensure that there is only one left room and one right room
+            if ((LeftRoomsPlaced == 1 && Cast<ARoomOption>(RandomRoom)->RoomType == ERoomType::Left) ||
+                (RightRoomsPlaced == 1 && Cast<ARoomOption>(RandomRoom)->RoomType == ERoomType::Right))
+            {
+                RandomRoom = nullptr;
+            }
         }
     } while (RandomRoom == nullptr);
 
@@ -158,7 +206,7 @@ void ALevelGeneration::StartGame()
 {
 }
 
-void ALevelGeneration::PlaceRoom(ARoomOption *RoomOption, int RoomIndex)
+void ALevelGeneration::PlaceRoom(ARoomOption *RoomOption, int RoomIndex, bool bShouldSpawnBoss)
 {
     if (!RoomOption)
     {
@@ -187,6 +235,14 @@ void ALevelGeneration::PlaceRoom(ARoomOption *RoomOption, int RoomIndex)
         {
             UE_LOG(LogTemp, Warning, TEXT("Failed to spawn RoomActor"));
             continue;
+        }
+
+        if (Cast<AAIConductor>(RoomActor))
+        {
+            if (!bShouldSpawnBoss)
+            {
+                continue;
+            }
         }
 
         AActor *RoomActorClone = DuplicateActor(RoomActor);
@@ -226,7 +282,7 @@ void ALevelGeneration::PlaceRoom(ARoomOption *RoomOption, int RoomIndex)
     }
 }
 
-AActor* ALevelGeneration::DuplicateActor(AActor* OriginalActor)
+AActor *ALevelGeneration::DuplicateActor(AActor *OriginalActor)
 {
     if (!OriginalActor)
     {
@@ -234,7 +290,7 @@ AActor* ALevelGeneration::DuplicateActor(AActor* OriginalActor)
         return nullptr;
     }
 
-    UWorld* World = GetWorld();
+    UWorld *World = GetWorld();
     if (!World)
     {
         UE_LOG(LogTemp, Warning, TEXT("Could not retrieve valid world."));
@@ -248,7 +304,7 @@ AActor* ALevelGeneration::DuplicateActor(AActor* OriginalActor)
     FVector SpawnLocation = FVector(0.0f, 0.0f, 0.0f);
     FRotator SpawnRotation = FRotator::ZeroRotator;
 
-    AActor* NewActor = World->SpawnActor<AActor>(OriginalActor->GetClass(), SpawnLocation, SpawnRotation, SpawnParams);
+    AActor *NewActor = World->SpawnActor<AActor>(OriginalActor->GetClass(), SpawnLocation, SpawnRotation, SpawnParams);
     if (!NewActor)
     {
         UE_LOG(LogTemp, Warning, TEXT("Failed to spawn duplicate actor."));
