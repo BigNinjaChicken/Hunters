@@ -17,9 +17,6 @@
 
 APlayerCharacter::APlayerCharacter()
 {
-	UCharacterMovementComponent *MovementComponent = GetCharacterMovement();
-	DefaultMaxWalkingSpeed = MovementComponent->MaxWalkSpeed;
-
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
 
@@ -43,6 +40,12 @@ void APlayerCharacter::BeginPlay()
 {
 	// Call the base class
 	Super::BeginPlay();
+
+	UCharacterMovementComponent *MovementComponent = GetCharacterMovement();
+	if (MovementComponent)
+	{
+		DefaultMaxWalkingSpeed = MovementComponent->MaxWalkSpeed;
+	}
 
 	// Add Input Mapping Context
 	if (APlayerController *PlayerController = Cast<APlayerController>(Controller))

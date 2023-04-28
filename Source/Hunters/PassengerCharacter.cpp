@@ -7,7 +7,6 @@
 
 APassengerCharacter::APassengerCharacter()
 {
-   
 }
 
 void APassengerCharacter::BeginPlay()
@@ -15,11 +14,11 @@ void APassengerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	// Spawn the AI controller and attach it to the AI character
-    PassengerController = GetWorld()->SpawnActor<AMyAIController>(AMyAIController::StaticClass());
-    if (PassengerController)
-    {
-        PassengerController->Possess(this);
-    }
+	PassengerController = GetWorld()->SpawnActor<AMyAIController>(AMyAIController::StaticClass());
+	if (PassengerController)
+	{
+		PassengerController->Possess(this);
+	}
 }
 
 void APassengerCharacter::Tick(float DeltaSeconds)

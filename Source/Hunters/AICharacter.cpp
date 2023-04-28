@@ -9,7 +9,6 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 
-
 AAICharacter::AAICharacter()
 {
     AIControllerClass = AMyAIController::StaticClass();
@@ -45,11 +44,13 @@ void AAICharacter::BeginPlay()
 
 void AAICharacter::Tick(float DeltaSeconds)
 {
-    if (AIState == EAIState::MovingToPlayer) {
+    if (AIState == EAIState::MovingToPlayer)
+    {
         AIController->MoveToActor(Player);
     }
 
-    if (AIState == EAIState::StandingStill) {
+    if (AIState == EAIState::StandingStill)
+    {
         AIController->StopMovement();
     }
 }
@@ -74,26 +75,29 @@ void AAICharacter::OnTargetPerceptionUpdated(AActor *Actor, FAIStimulus Stimulus
     else // Player lost
     {
         AIState = EAIState::StandingStill;
-        
     }
 }
 
 void AAICharacter::Explode()
 {
     // Get all actors nearby
-    TArray<AActor*> Actors;
+    TArray<AActor *> Actors;
     UGameplayStatics::GetAllActorsOfClass(this, APlayerCharacter::StaticClass(), Actors);
 
     // Iterate over all nearby actors
-    for (AActor* Actor : Actors)
+    for (AActor *Actor : Actors)
     {
         // Check if the actor is a player character
-        APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(Actor);
+        APlayerCharacter *PlayerCharacter = Cast<APlayerCharacter>(Actor);
         if (PlayerCharacter)
         {
-            // Destroy the player character
-            PlayerCharacter->Destroy();
-
+            // Check if the player character is within 200 units of this AI character
+            float Distance = FVector::Distance(GetActorLocation(), PlayerCharacter->GetActorLocation());
+            if (Distance <= KillDistance)
+            {
+                // Destroy the player character
+                PlayerCharacter->Destroy();
+            }
         }
     }
 

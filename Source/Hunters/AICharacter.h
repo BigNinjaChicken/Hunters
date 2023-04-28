@@ -27,6 +27,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
     EAIState AIState;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AI")
+    float KillDistance = 200.0f;
+
     UFUNCTION()
     void OnTargetPerceptionUpdated(AActor *Actor, FAIStimulus Stimulus);
 
