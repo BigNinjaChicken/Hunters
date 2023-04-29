@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Perception/AIPerceptionComponent.h"
+
 #include "PassengerCharacter.generated.h"
 
 UCLASS()
@@ -16,7 +16,12 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
-	class AMyAIController *PassengerController;
+protected:
+	class AMyAIController* PassengerController = nullptr;
 
-	FVector TargetLocation;
+	bool bIsWaiting;
+	FTimerHandle WaitTimerHandle;
+
+	FVector FindRandomTargetLocation();
+	void MoveToLocation(float DeltaSeconds);
 };

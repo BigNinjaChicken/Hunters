@@ -45,12 +45,6 @@ public:
     UPROPERTY(EditAnywhere, meta = (MakeEditWidget = true), Category = "Generation")
     int RoomAmount = 50;
 
-    // UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Generation", meta = (AllowPrivateAccess = "true"))
-    // class ARoomPlacement* RoomPlacementActor;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Generation", meta = (AllowPrivateAccess = "true"))
-    class ANavMeshBoundsVolume* NavMeshBoundsVolume;
-
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Generation", meta = (AllowPrivateAccess = "true"))
     TSubclassOf<APassengerCharacter> PassengerCharacterBlueprint;
 

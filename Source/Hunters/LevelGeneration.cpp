@@ -150,8 +150,8 @@ void ALevelGeneration::SpawnAI()
         }
 
         // Spawn AIConductorBlueprint
-        const FVector SpawnLocation = Room->ConductorSpawnLocation + Room->GetActorLocation();
-        const FRotator SpawnRotation = FRotator(0.0f, 0.0f, 0.0f);
+        const FVector SpawnLocation = Room->ConductorSpawnLocation.GetLocation() + Room->GetActorLocation();
+        const FRotator SpawnRotation = Room->ConductorSpawnLocation.GetRotation().Rotator();
 
         AAIConductor *Passenger = GetWorld()->SpawnActor<AAIConductor>(AIConductorBlueprint, SpawnLocation, SpawnRotation);
     }
@@ -206,63 +206,62 @@ void ALevelGeneration::StartGame()
 {
 }
 
+// Function to place a room in the level
 void ALevelGeneration::PlaceRoom(ARoomOption *RoomOption, int RoomIndex, bool bShouldSpawnBoss)
 {
     if (!RoomOption)
-    {
-        UE_LOG(LogTemp, Error, TEXT("Nullptr passed as RoomOption parameter to PlaceRoom function"));
         return;
-    }
 
+    // Calculate the rotation of the room based on the number of left and right rooms placed
     float Rotation = (LeftRoomsPlaced * -90.0f) + (RightRoomsPlaced * 90.0f);
 
+    // Calculate the starting location and offset of the room
     FVector RoomStartLocation = RoomOption->GetActorLocation() + RoomOption->StartLocation;
     FVector RoomEndOffset = RoomOption->EndLocation - RoomOption->StartLocation;
 
+    // Spawn an ARoomPlacement actor and return if it fails
     ARoomPlacement *RoomPlacementActor = GetWorld()->SpawnActor<ARoomPlacement>(ARoomPlacement::StaticClass());
-
     if (!RoomPlacementActor)
-    {
-        UE_LOG(LogTemp, Error, TEXT("Failed to spawn ARoomPlacement"));
         return;
-    }
 
     RoomPlacementActor->SetActorLocation(RoomStartLocation);
 
+    RoomPlacementActor->GetRootComponent()->SetMobility(EComponentMobility::Static);
+
     for (AActor *RoomActor : RoomOption->RoomActors)
     {
-        if (!RoomActor)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Failed to spawn RoomActor"));
+        // If the RoomActor is null or the RoomActor is an AAIConductor and bShouldSpawnBoss is false, skip to the next actor
+        if (!RoomActor || (Cast<AAIConductor>(RoomActor) && !bShouldSpawnBoss))
             continue;
-        }
-
-        if (Cast<AAIConductor>(RoomActor))
-        {
-            if (!bShouldSpawnBoss)
-            {
-                continue;
-            }
-        }
 
         AActor *RoomActorClone = DuplicateActor(RoomActor);
-
         if (RoomActorClone)
         {
             RoomActorClone->AttachToActor(RoomPlacementActor, FAttachmentTransformRules::KeepWorldTransform);
         }
     }
 
+    // Set the mobility of the ARoomPlacement actor's root component to Movable
+    RoomPlacementActor->GetRootComponent()->SetMobility(EComponentMobility::Movable);
+
+    // Set the location and rotation of the ARoomPlacement actor and the owner of the function
     RoomPlacementActor->SetActorLocation(GetActorLocation());
     RoomPlacementActor->GetRootComponent()->SetRelativeRotationExact(FRotator(0.0f, Rotation, 0.0f));
+
+    // Move Level Generation Actor
     GetRootComponent()->SetRelativeRotationExact(FRotator(0.0f, Rotation, 0.0f));
     AddActorLocalOffset(RoomEndOffset);
+
+    // Update the RoomPlacement that it is a boss room
+    bShouldSpawnBoss ? RoomPlacementActor->CreateBossRoom(GetActorLocation()) : void();
+
+    // Update the number of left and right rooms
 
     if (RoomOption->RoomType == ERoomType::Right)
     {
         if (LeftRoomsPlaced == 1)
         {
-            LeftRoomsPlaced = 0;
+            LeftRoomsPlaced--;
         }
         else
         {
@@ -273,7 +272,7 @@ void ALevelGeneration::PlaceRoom(ARoomOption *RoomOption, int RoomIndex, bool bS
     {
         if (RightRoomsPlaced == 1)
         {
-            RightRoomsPlaced = 0;
+            RightRoomsPlaced--;
         }
         else
         {

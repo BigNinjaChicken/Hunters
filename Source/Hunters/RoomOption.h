@@ -46,7 +46,7 @@ public:
     int SpawnLocationAmount = 1;
 
     UPROPERTY(EditAnywhere, Category = "AI", meta = (MakeEditWidget = true))
-    FVector ConductorSpawnLocation = FVector(100.0f, 100.0f, 100.0f);
+    FTransform ConductorSpawnLocation;
 
 protected:
     virtual void OnConstruction(const FTransform& Transform) override;
