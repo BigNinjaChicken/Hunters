@@ -9,6 +9,15 @@
 
 #include "AIConductor.generated.h"
 
+USTRUCT()
+struct FSpeechOptions
+{
+	GENERATED_BODY()
+
+    UPROPERTY()
+    TMap<FString, float> Entries;
+};
+
 UCLASS()
 class HUNTERS_API AAIConductor : public ACharacter
 {
@@ -52,4 +61,10 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Talking")
 	float BossRoomVignetteIntensity = 1.6f;
+
+public:
+	TArray<FSpeechOptions> SpeechOptions;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class USoundCue *TalkSoundCue;
 };

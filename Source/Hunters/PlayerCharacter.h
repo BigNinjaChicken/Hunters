@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "Engine/World.h"
+#include "AIConductor.h"
 
 #include "PlayerCharacter.generated.h"
 
@@ -95,4 +97,17 @@ public:
 	USkeletalMeshComponent *GetMesh1P() const { return Mesh1P; }
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent *GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+
+public:
+	TArray<FHitResult> MultiSphereTrace();
+
+	void StartTalkingMiniGame(AAIConductor* HitAIConductor);
+
+	void RespondTalking();
+	bool bCaptureInputs = false;
+	TArray<float> CapturedInputTimes;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Talking")
+    TSubclassOf<UUserWidget> TalkingMiniGame; 
+	UUserWidget *TalkingMiniGameWidget;
 };
