@@ -37,13 +37,13 @@ public:
 	float SavedVignetteIntensity;
 
 	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
-	float DetectionRange = 100.0f;
-
-	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
 	float BossRoomMaxWalkSpeed = 300.0f;
 
 	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
 	float BossRoomVignetteIntensity = 1.6f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
+	float DetectionRange = 100.0f;
 
 	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
 	bool bIsPlayerInBossRoom = false;
