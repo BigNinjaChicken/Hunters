@@ -27,12 +27,13 @@ AAIConductor::AAIConductor()
 
     // Create some FSpeechOptions objects
     FSpeechOptions option1;
-    option1.Entries.Add("Option1", 1.0f);
-    option1.Entries.Add("Option2", 2.0f);
+    option1.Entries.Add("Space", 0.5f);
+    option1.Entries.Add("We're", 1.0f);
+    option1.Entries.Add("Init?", 1.5f);
 
     FSpeechOptions option2;
-    option2.Entries.Add("Option3", 3.0f);
-    option2.Entries.Add("Option4", 4.0f);
+    option2.Entries.Add("I'm", 0.5f);
+    option2.Entries.Add("Tim", 2.0f);
 
     // Add the options to the TArray
     SpeechOptions.Add(option1);
@@ -68,20 +69,20 @@ void AAIConductor::OnOverlapBegin(UPrimitiveComponent *OverlappedComponent, AAct
         ButtonPromptWidget->SetVisibility(true);
 
         // Find all Post Process Volumes in the world
-        TArray<AActor *> FoundActors;
-        UGameplayStatics::GetAllActorsOfClass(GetWorld(), APostProcessVolume::StaticClass(), FoundActors);
+        // TArray<AActor *> FoundActors;
+        // UGameplayStatics::GetAllActorsOfClass(GetWorld(), APostProcessVolume::StaticClass(), FoundActors);
 
-        APostProcessVolume *PostProcessVolume = Cast<APostProcessVolume>(FoundActors[0]);
+        // APostProcessVolume *PostProcessVolume = Cast<APostProcessVolume>(FoundActors[0]);
 
-        if (PostProcessVolume)
-        {
-            SavedVignetteIntensity = PostProcessVolume->Settings.VignetteIntensity;
-            PostProcessVolume->Settings.VignetteIntensity = BossRoomVignetteIntensity;
-        }
+        // if (PostProcessVolume)
+        // {
+        //     SavedVignetteIntensity = PostProcessVolume->Settings.VignetteIntensity;
+        //     PostProcessVolume->Settings.VignetteIntensity = BossRoomVignetteIntensity;
+        // }
 
-        APlayerCharacter *PlayerCharacter = Cast<APlayerCharacter>(OtherActor);
-        SavedMaxWalkSpeed = PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed;
-        PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = BossRoomMaxWalkSpeed;
+        // APlayerCharacter *PlayerCharacter = Cast<APlayerCharacter>(OtherActor);
+        // SavedMaxWalkSpeed = PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed;
+        // PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = BossRoomMaxWalkSpeed;
     }
 }
 
@@ -92,19 +93,19 @@ void AAIConductor::OnOverlapEnd(UPrimitiveComponent *OverlappedComponent, AActor
         ButtonPromptWidget->SetVisibility(false);
 
         // Find all Post Process Volumes in the world
-        TArray<AActor *> FoundActors;
-        UGameplayStatics::GetAllActorsOfClass(GetWorld(), APostProcessVolume::StaticClass(), FoundActors);
+        // TArray<AActor *> FoundActors;
+        // UGameplayStatics::GetAllActorsOfClass(GetWorld(), APostProcessVolume::StaticClass(), FoundActors);
 
-        APostProcessVolume *PostProcessVolume = Cast<APostProcessVolume>(FoundActors[0]);
-        if (PostProcessVolume)
-        {
-            PostProcessVolume->Settings.VignetteIntensity = SavedVignetteIntensity;
-        }
+        // APostProcessVolume *PostProcessVolume = Cast<APostProcessVolume>(FoundActors[0]);
+        // if (PostProcessVolume)
+        // {
+        //     PostProcessVolume->Settings.VignetteIntensity = SavedVignetteIntensity;
+        // }
 
-        APlayerCharacter *PlayerCharacter = Cast<APlayerCharacter>(OtherActor);
-        if (PlayerCharacter)
-        {
-            PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = SavedMaxWalkSpeed;
-        }
+        // APlayerCharacter *PlayerCharacter = Cast<APlayerCharacter>(OtherActor);
+        // if (PlayerCharacter)
+        // {
+        //     PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = SavedMaxWalkSpeed;
+        // }
     }
 }

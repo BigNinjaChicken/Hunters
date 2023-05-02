@@ -18,6 +18,8 @@
 #include "Components/Border.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/HorizontalBoxSlot.h"
+#include "Engine/PostProcessVolume.h"
 
 #include "GameFramework/PlayerController.h" // for APlayerController class
 
@@ -75,11 +77,50 @@ void APlayerCharacter::BeginPlay()
 	{
 		// create widget
 		TalkingMiniGameWidget = CreateWidget<UUserWidget>(GetWorld(), TalkingMiniGame);
-
 		if (TalkingMiniGameWidget)
 		{
 			TalkingMiniGameWidget->AddToViewport();
 			TalkingMiniGameWidget->SetVisibility(ESlateVisibility::Collapsed);
+		}
+
+		ActWidget = CreateWidget<UUserWidget>(GetWorld(), ActUserWidget);
+		if (ActWidget)
+		{
+			ActWidget->AddToViewport();
+		}
+
+		IntroWidget = CreateWidget<UUserWidget>(GetWorld(), IntroUserWidget);
+		if (IntroWidget)
+		{
+			IntroWidget->AddToViewport();
+
+			UTextBlock *IntroText = Cast<UTextBlock>(IntroWidget->GetWidgetFromName(FName("IntroText")));
+			if (IntroText)
+			{
+				for (int i = 0; i < AllIntroText.Num(); i++)
+				{
+					FTimerHandle TimerHandle1;
+					GetWorldTimerManager().SetTimer(
+						TimerHandle1,
+						[this, IntroText, i]()
+						{
+							IntroText->SetText(FText::FromString(AllIntroText[i]));
+
+							if (i == TextBlocks.Num())
+							{
+								FTimerHandle TimerHandle2;
+								GetWorldTimerManager().SetTimer(
+									TimerHandle2,
+									[this, IntroText, i]()
+									{
+										IntroWidget->SetVisibility(ESlateVisibility::Collapsed);
+									},
+									15.0f, false);
+							}
+						},
+						(i + 0.1f) * 5.0f, false);
+				}
+			}
 		}
 	}
 }
@@ -162,6 +203,27 @@ void APlayerCharacter::Talk(const FInputActionValue &Value)
 		return;
 	}
 
+	if (bRespondPhase)
+	{
+		AActor *SelfActor = GetOwner();
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), TalkSoundCue, SelfActor->GetActorLocation());
+
+		if (bHasStartedTalking)
+		{
+
+			return;
+		}
+
+		RespondTalking();
+
+		return;
+	}
+
+	if (bCaptureInputs)
+	{
+		return;
+	}
+
 	AActor *SelfActor = GetOwner();
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), TalkSoundCue, SelfActor->GetActorLocation());
 
@@ -184,10 +246,6 @@ void APlayerCharacter::Talk(const FInputActionValue &Value)
 		StartTalkingMiniGame(HitAIConductor);
 		break;
 	}
-
-	if (bCaptureInputs)
-	{
-	}
 }
 
 TArray<FHitResult> APlayerCharacter::MultiSphereTrace()
@@ -209,7 +267,7 @@ TArray<FHitResult> APlayerCharacter::MultiSphereTrace()
 		ObjectTypes,
 		false,
 		ActorsToIgnore,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
 		OutHits,
 		true);
 
@@ -231,31 +289,36 @@ void APlayerCharacter::StartTalkingMiniGame(AAIConductor *HitAIConductor)
 		return;
 	}
 
-	// Get the horizontal box widget
-	UHorizontalBox *HorizontalBox = Cast<UHorizontalBox>(TalkingMiniGameWidget->GetWidgetFromName(FName("HorizontalBox")));
+	HorizontalBox = Cast<UHorizontalBox>(TalkingMiniGameWidget->GetWidgetFromName(FName("HorizontalBox")));
 	if (!HorizontalBox)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No HorizontalBox"));
 		return;
 	}
 
-	UBorder *Ball = Cast<UBorder>(TalkingMiniGameWidget->GetWidgetFromName(FName("Ball")));
+	Ball = Cast<UBorder>(TalkingMiniGameWidget->GetWidgetFromName(FName("Ball")));
 	if (!Ball)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No Ball"));
 		return;
 	}
 
+	Canvas = Cast<UCanvasPanel>(TalkingMiniGameWidget->GetWidgetFromName(FName("CanvasPanel")));
+	if (!Canvas)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Canvas"));
+		return;
+	}
+
 	int32 RandomIndex = FMath::RandRange(0, ArraySize - 1);
 	FSpeechOptions SpeechOption = HitAIConductor->SpeechOptions[RandomIndex];
 
-	FString Key;
-	float Value;
-	TArray<TPair<FString, float>> AllLines = SpeechOption.Entries.Array();
+	AllLines = SpeechOption.Entries.Array();
+	// Create the text box widgets
 	for (TPair<FString, float> line : AllLines)
 	{
-		Key = line.Key;
-		Value = line.Value;
+		FString Key = line.Key;
+		float Value = line.Value;
 
 		// Create the text box widget
 		UTextBlock *TextBox = NewObject<UTextBlock>(this);
@@ -268,39 +331,149 @@ void APlayerCharacter::StartTalkingMiniGame(AAIConductor *HitAIConductor)
 
 		// Add the text box widget as a child of the horizontal box widget
 		HorizontalBox->AddChild(TextBox);
+
+		// Add the text box widget to the array
+		TextBlocks.Add(TextBox);
 	}
-
-	for (TPair<FString, float> line : AllLines)
-	{
-		Key = line.Key;
-		Value = line.Value;
-
-		FTimerHandle TimerHandle;
-		GetWorldTimerManager().SetTimer(
-		TimerHandle, [this, HitAIConductor, Ball = Ball]()
-		{
-			UGameplayStatics::PlaySoundAtLocation(GetWorld(), HitAIConductor->TalkSoundCue, HitAIConductor->GetActorLocation());
-			FVector2D BallPosition(100.0f, 200.0f);
-
-			// Create a canvas panel slot for the ball widget
-			UCanvasPanelSlot* BallSlot = Cast<UCanvasPanelSlot>(Ball->GetContentSlot());
-
-			// Set the position of the ball widget relative to the canvas panel
-			if (BallSlot) {
-				BallSlot->SetDesiredPosition(BallPosition);
-			} else {
-				UE_LOG(LogTemp, Warning, TEXT("RIP ME"));
-			}
-		}, Value, false);
-	}
-
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &APlayerCharacter::RespondTalking, Value, false);
 
 	TalkingMiniGameWidget->SetVisibility(ESlateVisibility::Visible);
+
+	TArray<AActor *> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APostProcessVolume::StaticClass(), FoundActors);
+
+	APostProcessVolume *PostProcessVolume = Cast<APostProcessVolume>(FoundActors[0]);
+
+	if (PostProcessVolume)
+	{
+		SavedVignetteIntensity = PostProcessVolume->Settings.VignetteIntensity;
+		PostProcessVolume->Settings.VignetteIntensity = BossRoomVignetteIntensity;
+	}
+
+	SavedMaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = BossRoomMaxWalkSpeed;
+
+	bCaptureInputs = true;
+
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle, [this, HitAIConductor]()
+		{
+			for (int i = 0; i < TextBlocks.Num(); i++)
+			{
+			FTimerHandle TimerHandle2;
+			GetWorldTimerManager().SetTimer(
+				TimerHandle2,
+				[this, HitAIConductor, i]() mutable
+				{
+					UGameplayStatics::PlaySoundAtLocation(GetWorld(), HitAIConductor->TalkSoundCue, HitAIConductor->GetActorLocation());
+
+					FVector2D TextBoxSize = TextBlocks[i]->GetDesiredSize();
+
+					const TArray<UPanelSlot *> Panels = Canvas->GetSlots();
+					for (UPanelSlot *Panel : Panels)
+					{
+						UCanvasPanelSlot *CanvasSlot = Cast<UCanvasPanelSlot>(Panel);
+						if (!CanvasSlot)
+						{
+							continue;
+						}
+							
+						UWidget *ChildWidget = CanvasSlot->Content;
+						if (!ChildWidget) {
+							continue;
+						}	
+						
+						if (!Cast<UBorder>(ChildWidget))
+						{
+							continue;
+						}
+
+						CanvasSlot->SetPosition(FVector2D((i - ((TextBlocks.Num() - 1.0f) / 2.0f)) * TextBoxSize.X, 0.0f));
+						if (i == TextBlocks.Num() - 1) {
+							bRespondPhase = true;
+						}
+					}
+				},
+				AllLines[i].Value, false);
+			} },
+		0.1f, false);
 }
 
 void APlayerCharacter::RespondTalking()
 {
-	bCaptureInputs = true;
+	bHasStartedTalking = true;
+
+	const TArray<UPanelSlot *> Panels = Canvas->GetSlots();
+
+	for (int i = 0; i < TextBlocks.Num(); i++)
+	{
+		FTimerHandle TimerHandle3;
+		GetWorldTimerManager().SetTimer(
+			TimerHandle3,
+			[this, i, Panels]() mutable
+			{
+				FVector2D TextBoxSize = TextBlocks[i]->GetDesiredSize();
+
+				for (UPanelSlot *Panel : Panels)
+				{
+					UCanvasPanelSlot *CanvasSlot = Cast<UCanvasPanelSlot>(Panel);
+					if (!CanvasSlot)
+					{
+						continue;
+					}
+
+					UWidget *ChildWidget = CanvasSlot->Content;
+					if (!ChildWidget)
+					{
+						continue;
+					}
+
+					if (!Cast<UBorder>(ChildWidget))
+					{
+						continue;
+					}
+
+					CanvasSlot->SetPosition(FVector2D((i - ((TextBlocks.Num() - 1) / 2.0f)) * TextBoxSize.X, 0.0f));
+					if (i == TextBlocks.Num() - 1)
+					{
+						FTimerHandle TimerHandle4;
+						GetWorldTimerManager().SetTimer(
+							TimerHandle4,
+							[this]()
+							{
+								ResetTalking();
+							},
+							1.0f, false);
+					}
+				}
+			},
+			AllLines[i].Value, false);
+	}
+}
+
+void APlayerCharacter::ResetTalking()
+{
+	TalkingMiniGameWidget->SetVisibility(ESlateVisibility::Collapsed);
+
+	TArray<AActor *> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APostProcessVolume::StaticClass(), FoundActors);
+
+	APostProcessVolume *PostProcessVolume = Cast<APostProcessVolume>(FoundActors[0]);
+
+	if (PostProcessVolume)
+	{
+		PostProcessVolume->Settings.VignetteIntensity = SavedVignetteIntensity;
+	}
+
+	GetCharacterMovement()->MaxWalkSpeed = SavedMaxWalkSpeed;
+
+	bCaptureInputs = false;
+	bRespondPhase = false;
+	bHasStartedTalking = false;
+	bCanBeScored = false;
+
+	HorizontalBox->ClearChildren();
+	AllLines.Empty();
+	TextBlocks.Empty();
+	CapturedInputTimes.Empty();
 }

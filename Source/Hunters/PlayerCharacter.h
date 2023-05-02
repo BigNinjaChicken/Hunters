@@ -7,6 +7,9 @@
 #include "InputActionValue.h"
 #include "Engine/World.h"
 #include "AIConductor.h"
+#include "Blueprint/UserWidget.h"
+#include "Animation/WidgetAnimation.h"
+#include "Blueprint/WidgetBlueprintGeneratedClass.h"
 
 #include "PlayerCharacter.generated.h"
 
@@ -16,6 +19,14 @@ class USceneComponent;
 class UCameraComponent;
 class UAnimMontage;
 class USoundBase;
+
+UENUM(BlueprintType)
+enum class EGrade : uint8
+{
+	Perfect UMETA(DisplayName = "Perfect"),
+	Good UMETA(DisplayName = "Good"),
+	Bad UMETA(DisplayName = "Bad")
+};
 
 UCLASS()
 class HUNTERS_API APlayerCharacter : public ACharacter
@@ -101,13 +112,47 @@ public:
 public:
 	TArray<FHitResult> MultiSphereTrace();
 
-	void StartTalkingMiniGame(AAIConductor* HitAIConductor);
+	void StartTalkingMiniGame(AAIConductor *HitAIConductor);
 
 	void RespondTalking();
 	bool bCaptureInputs = false;
+	bool bRespondPhase = false;
+	bool bHasStartedTalking = false;
+	bool bCanBeScored = false;
 	TArray<float> CapturedInputTimes;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Talking")
-    TSubclassOf<UUserWidget> TalkingMiniGame; 
+	TSubclassOf<UUserWidget> TalkingMiniGame;
 	UUserWidget *TalkingMiniGameWidget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Talking")
+	float SavedMaxWalkSpeed;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Talking")
+	float SavedVignetteIntensity;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Talking")
+	float BossRoomMaxWalkSpeed = 300.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Talking")
+	float BossRoomVignetteIntensity = 1.6f;
+
+	class UCanvasPanel *Canvas;
+	class UBorder *Ball;
+	class UHorizontalBox *HorizontalBox;
+	TArray<TPair<FString, float>> AllLines;
+	TArray<class UTextBlock *> TextBlocks;
+
+	void ResetTalking();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Act")
+	TSubclassOf<UUserWidget> ActUserWidget;
+	UUserWidget *ActWidget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Act")
+	TSubclassOf<UUserWidget> IntroUserWidget;
+	UUserWidget *IntroWidget;
+
+	TArray<FString> AllIntroText = {"I Love Exposion", "Or do i?", "I dont, but I know who does..."};
 };
