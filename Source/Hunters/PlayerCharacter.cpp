@@ -23,6 +23,10 @@
 #include "Components/TimelineComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Curves/CurveFloat.h"
+#include "LevelSequencePlayer.h"
+#include "LevelSequence.h"
+#include "LevelSequenceActor.h"
+#include "Camera/CameraShakeBase.h"
 
 #include "GameFramework/PlayerController.h" // for APlayerController class
 
@@ -146,6 +150,16 @@ void APlayerCharacter::IntroTimelineComponentFinishedCallback()
 {
 	IntroWidget->SetVisibility(ESlateVisibility::Collapsed);
 	ActWidget->SetVisibility(ESlateVisibility::Collapsed);
+
+	if (LevelSequence)
+	{
+		ALevelSequenceActor *LevelSequenceActor;
+		ULevelSequencePlayer *LevelSequencePlayer = ULevelSequencePlayer::CreateLevelSequencePlayer(GetWorld(), LevelSequence, FMovieSceneSequencePlaybackSettings(), LevelSequenceActor);
+		if (LevelSequencePlayer)
+		{
+			LevelSequencePlayer->Play();
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////// Input

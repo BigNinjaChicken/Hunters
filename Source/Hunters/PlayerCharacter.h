@@ -9,7 +9,6 @@
 #include "AIConductor.h"
 #include "Blueprint/UserWidget.h"
 #include "Animation/WidgetAnimation.h"
-#include "Blueprint/WidgetBlueprintGeneratedClass.h"
 
 #include "PlayerCharacter.generated.h"
 
@@ -172,4 +171,7 @@ protected:
     
     UFUNCTION()
     void IntroTimelineComponentFinishedCallback();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Intro")
+	class ULevelSequence* LevelSequence;
 };
