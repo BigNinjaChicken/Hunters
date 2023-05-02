@@ -76,6 +76,8 @@ public:
 protected:
 	virtual void BeginPlay();
 
+    virtual void Tick(float DeltaSeconds) override;	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "EOS")
 	TSubclassOf<UUserWidget> MainMenu;
 
@@ -110,6 +112,7 @@ public:
 	UCameraComponent *GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
 public:
+	// Talking Minigame
 	TArray<FHitResult> MultiSphereTrace();
 
 	void StartTalkingMiniGame(AAIConductor *HitAIConductor);
@@ -146,13 +149,27 @@ public:
 	void ResetTalking();
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Act")
+	// Intro Section
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Intro")
 	TSubclassOf<UUserWidget> ActUserWidget;
 	UUserWidget *ActWidget;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Act")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Intro")
 	TSubclassOf<UUserWidget> IntroUserWidget;
 	UUserWidget *IntroWidget;
+	UTextBlock *IntroText;
 
 	TArray<FString> AllIntroText = {"I Love Exposion", "Or do i?", "I dont, but I know who does..."};
+
+protected:
+    class UTimelineComponent* IntroTimelineComponent;
+ 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Intro")
+    class UCurveFloat* FloatCurve;
+
+	UFUNCTION()
+    void IntroTimelineComponentCallback(float val);
+    
+    UFUNCTION()
+    void IntroTimelineComponentFinishedCallback();
 };

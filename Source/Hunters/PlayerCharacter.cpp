@@ -20,6 +20,9 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Engine/PostProcessVolume.h"
+#include "Components/TimelineComponent.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Curves/CurveFloat.h"
 
 #include "GameFramework/PlayerController.h" // for APlayerController class
 
@@ -45,6 +48,8 @@ APlayerCharacter::APlayerCharacter()
 	Mesh1P->CastShadow = false;
 	// Mesh1P->SetRelativeRotation(FRotator(0.9f, -19.19f, 5.2f));
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
+
+	IntroTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("MyTimelineComponent"));
 }
 
 void APlayerCharacter::BeginPlay()
@@ -94,35 +99,53 @@ void APlayerCharacter::BeginPlay()
 		{
 			IntroWidget->AddToViewport();
 
-			UTextBlock *IntroText = Cast<UTextBlock>(IntroWidget->GetWidgetFromName(FName("IntroText")));
+			IntroText = Cast<UTextBlock>(IntroWidget->GetWidgetFromName(FName("IntroText")));
 			if (IntroText)
 			{
-				for (int i = 0; i < AllIntroText.Num(); i++)
+				if (IntroTimelineComponent)
 				{
-					FTimerHandle TimerHandle1;
-					GetWorldTimerManager().SetTimer(
-						TimerHandle1,
-						[this, IntroText, i]()
-						{
-							IntroText->SetText(FText::FromString(AllIntroText[i]));
+					// Bind the OnTimelineFloat function to the timeline's float track
+					FOnTimelineFloat TimelineFloat;
+					FOnTimelineEventStatic onTimelineFinishedCallback;
+					TimelineFloat.BindUFunction(this, "IntroTimelineComponentCallback");
+					onTimelineFinishedCallback.BindUFunction(this, "IntroTimelineComponentFinishedCallback");
+					IntroTimelineComponent->AddInterpFloat(FloatCurve, TimelineFloat);
+					IntroTimelineComponent->SetTimelineFinishedFunc(onTimelineFinishedCallback);
+					const float IntroLength = 25.0f;
+					IntroTimelineComponent->SetPlayRate(1.0f / IntroLength);
+					IntroTimelineComponent->SetLooping(false);
+					IntroTimelineComponent->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
 
-							if (i == TextBlocks.Num())
-							{
-								FTimerHandle TimerHandle2;
-								GetWorldTimerManager().SetTimer(
-									TimerHandle2,
-									[this, IntroText, i]()
-									{
-										IntroWidget->SetVisibility(ESlateVisibility::Collapsed);
-									},
-									15.0f, false);
-							}
-						},
-						(i + 0.1f) * 5.0f, false);
+					IntroTimelineComponent->PlayFromStart();
 				}
 			}
 		}
 	}
+}
+
+// Called every frame
+void APlayerCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (IntroTimelineComponent != NULL)
+	{
+		IntroTimelineComponent->TickComponent(DeltaTime, ELevelTick::LEVELTICK_TimeOnly, NULL);
+	}
+}
+
+void APlayerCharacter::IntroTimelineComponentCallback(float interpolatedVal)
+{
+	// UKismetMathLibrary::NormalizeToRange(UKismetMathLibrary::NormalizeToRange(OriginalValue, OriginalMin, OriginalMax), NewMin, NewMax);
+	int32 TextIndex = UKismetMathLibrary::MapRangeClamped(interpolatedVal, 0.0f, 1.0f, 0.0f, ((float)AllIntroText.Num()) - 0.001f);
+
+	IntroText->SetText(FText::FromString(AllIntroText[TextIndex]));
+}
+
+void APlayerCharacter::IntroTimelineComponentFinishedCallback()
+{
+	IntroWidget->SetVisibility(ESlateVisibility::Collapsed);
+	ActWidget->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
