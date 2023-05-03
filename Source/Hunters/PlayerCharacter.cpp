@@ -27,6 +27,7 @@
 #include "LevelSequence.h"
 #include "LevelSequenceActor.h"
 #include "Camera/CameraShakeBase.h"
+#include "Camera/PlayerCameraManager.h"
 
 #include "GameFramework/PlayerController.h" // for APlayerController class
 
@@ -115,7 +116,7 @@ void APlayerCharacter::BeginPlay()
 					onTimelineFinishedCallback.BindUFunction(this, "IntroTimelineComponentFinishedCallback");
 					IntroTimelineComponent->AddInterpFloat(FloatCurve, TimelineFloat);
 					IntroTimelineComponent->SetTimelineFinishedFunc(onTimelineFinishedCallback);
-					const float IntroLength = 25.0f;
+					const float IntroLength = 18.0f;
 					IntroTimelineComponent->SetPlayRate(1.0f / IntroLength);
 					IntroTimelineComponent->SetLooping(false);
 					IntroTimelineComponent->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
@@ -132,10 +133,10 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (IntroTimelineComponent != NULL)
-	{
-		IntroTimelineComponent->TickComponent(DeltaTime, ELevelTick::LEVELTICK_TimeOnly, NULL);
-	}
+	// if (IntroTimelineComponent != NULL)
+	// {
+	// 	IntroTimelineComponent->TickComponent(DeltaTime, ELevelTick::LEVELTICK_TimeOnly, NULL);
+	// }
 }
 
 void APlayerCharacter::IntroTimelineComponentCallback(float interpolatedVal)
@@ -158,6 +159,10 @@ void APlayerCharacter::IntroTimelineComponentFinishedCallback()
 		if (LevelSequencePlayer)
 		{
 			LevelSequencePlayer->Play();
+
+			ECameraShakePlaySpace PlaySpace = ECameraShakePlaySpace::CameraLocal;
+			APlayerCameraManager *CameraManager = GetWorld()->GetFirstPlayerController()->PlayerCameraManager;
+			CameraManager->StartCameraShake(CameraShakeBase, 1.0f, PlaySpace, FRotator(0.0f, 0.0f, 0.0f));
 		}
 	}
 }

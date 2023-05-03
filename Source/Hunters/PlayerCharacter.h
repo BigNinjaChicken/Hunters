@@ -158,7 +158,7 @@ public:
 	UUserWidget *IntroWidget;
 	UTextBlock *IntroText;
 
-	TArray<FString> AllIntroText = {"I Love Exposion", "Or do i?", "I dont, but I know who does..."};
+	TArray<FString> AllIntroText = {"", "You know the plan.", "Get to the Front as fast as possible.", "And don't let the conductor catch you."};
 
 protected:
     class UTimelineComponent* IntroTimelineComponent;
@@ -174,4 +174,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Intro")
 	class ULevelSequence* LevelSequence;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Intro")
+	TSubclassOf<UCameraShakeBase> CameraShakeBase;
 };
