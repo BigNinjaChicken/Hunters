@@ -61,7 +61,7 @@ public:
     void StartGame();
 
     /** Place a room */
-    void PlaceRoom(ARoomOption *RoomOption, int i, bool bShouldSpawnBoss);
+    void PlaceRoom(ARoomOption *RoomOption, int i, bool bShouldSpawnBoss, bool bIsLastRoom);
 
     /** Duplicate an actor */
     AActor *DuplicateActor(AActor *OriginalActor);
@@ -69,7 +69,7 @@ public:
 protected:
     virtual void BeginPlay() override;
     /** Choose a random room */
-    AActor *ChooseRandomRoom(bool bIsBossRoom);
+    AActor *ChooseRandomRoom(bool bIsBossRoom, bool bIsLastRoom);
 
     /** Spawn actors */
     void SpawnActors(TSubclassOf<AActor> InputActor, ARoomOption *Room);

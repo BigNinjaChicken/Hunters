@@ -93,16 +93,21 @@ void ALevelGeneration::BeginPlay()
     RightRoomsPlaced = 0;
 
     // Generate the level by placing rooms
-    for (int RoomIndex = RoomAmount; RoomIndex > 0; RoomIndex--)
+    int RoomIndex;
+    for (RoomIndex = RoomAmount; RoomIndex > 0; RoomIndex--)
     {
         bool bShouldSpawnBoss = RoomIndex == RoomAmount / 2;
 
         // Boss Room Condition
-        AActor *RandomRoom = ChooseRandomRoom(bShouldSpawnBoss);
+        AActor *RandomRoom = ChooseRandomRoom(bShouldSpawnBoss, false);
 
         // Place the chosen room
-        PlaceRoom(Cast<ARoomOption>(RandomRoom), RoomIndex, bShouldSpawnBoss);
+        PlaceRoom(Cast<ARoomOption>(RandomRoom), RoomIndex, bShouldSpawnBoss, false);
     }
+    AActor *RandomRoom = ChooseRandomRoom(false, true);
+
+    // Place the chosen room
+    PlaceRoom(Cast<ARoomOption>(RandomRoom), RoomIndex, false, true);
 
     // Start the game after a delay of 15 seconds
     GetWorldTimerManager().SetTimer(StartGameTimerHandle, this, &ALevelGeneration::StartGame, 15.0f, false);
@@ -157,7 +162,7 @@ void ALevelGeneration::SpawnAI()
     }
 }
 
-AActor *ALevelGeneration::ChooseRandomRoom(bool bIsBossRoom)
+AActor *ALevelGeneration::ChooseRandomRoom(bool bIsBossRoom, bool bIsLastRoom)
 {
     AActor *RandomRoom = nullptr;
     // Retrieve all available room options
@@ -173,6 +178,18 @@ AActor *ALevelGeneration::ChooseRandomRoom(bool bIsBossRoom)
 
     do
     {
+        if (bIsLastRoom)
+        {
+            for (AActor *Room : RoomOptions)
+            {
+                if (Cast<ARoomOption>(Room)->RoomType == ERoomType::Checkpoint)
+                {
+                    RandomRoom = Room;
+                    break;
+                }
+            }
+            break;
+        }
         if (bIsBossRoom)
         {
             for (AActor *Room : RoomOptions)
@@ -183,6 +200,7 @@ AActor *ALevelGeneration::ChooseRandomRoom(bool bIsBossRoom)
                     break;
                 }
             }
+            break;
         }
         else
         {
@@ -192,7 +210,8 @@ AActor *ALevelGeneration::ChooseRandomRoom(bool bIsBossRoom)
 
             // Ensure that there is only one left room and one right room
             if ((LeftRoomsPlaced == 1 && Cast<ARoomOption>(RandomRoom)->RoomType == ERoomType::Left) ||
-                (RightRoomsPlaced == 1 && Cast<ARoomOption>(RandomRoom)->RoomType == ERoomType::Right))
+                (RightRoomsPlaced == 1 && Cast<ARoomOption>(RandomRoom)->RoomType == ERoomType::Right) ||
+                Cast<ARoomOption>(RandomRoom)->RoomType == ERoomType::Checkpoint)
             {
                 RandomRoom = nullptr;
             }
@@ -207,7 +226,7 @@ void ALevelGeneration::StartGame()
 }
 
 // Function to place a room in the level
-void ALevelGeneration::PlaceRoom(ARoomOption *RoomOption, int RoomIndex, bool bShouldSpawnBoss)
+void ALevelGeneration::PlaceRoom(ARoomOption *RoomOption, int RoomIndex, bool bShouldSpawnBoss, bool bIsLastRoom)
 {
     if (!RoomOption)
         return;
@@ -247,6 +266,11 @@ void ALevelGeneration::PlaceRoom(ARoomOption *RoomOption, int RoomIndex, bool bS
     // Set the location and rotation of the ARoomPlacement actor and the owner of the function
     RoomPlacementActor->SetActorLocation(GetActorLocation());
     RoomPlacementActor->GetRootComponent()->SetRelativeRotationExact(FRotator(0.0f, Rotation, 0.0f));
+
+    if (bIsLastRoom)
+    {
+        RoomPlacementActor->bIsLastRoom = true;
+    }
 
     // Move Level Generation Actor
     GetRootComponent()->SetRelativeRotationExact(FRotator(0.0f, Rotation, 0.0f));

@@ -28,23 +28,16 @@ public:
 	void CreateBossRoom(FVector RoomEndOffset);
 
 	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
-	FVector RoomEndLocation;
-
-	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
-	float SavedMaxWalkSpeed;
-
-	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
-	float SavedVignetteIntensity;
-
-	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
-	float BossRoomMaxWalkSpeed = 300.0f;
-
-	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
-	float BossRoomVignetteIntensity = 1.6f;
-
-	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
-	float DetectionRange = 100.0f;
-
-	UPROPERTY(VisibleAnywhere, Category = "Boss Room")
 	bool bIsPlayerInBossRoom = false;
+
+	UPROPERTY(VisibleAnywhere, Category = "Generation")
+    class UBoxComponent* RoomEntrenceBoxComponent;
+
+	UFUNCTION()
+	void OnOverlapBegin(UPrimitiveComponent *OverlappedComponent, AActor *OtherActor, UPrimitiveComponent *OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult);
+
+	UFUNCTION()
+	void OnOverlapEnd(UPrimitiveComponent *OverlappedComponent, AActor *OtherActor, UPrimitiveComponent *OtherComp, int32 OtherBodyIndex);
+
+	bool bIsLastRoom = false;
 };

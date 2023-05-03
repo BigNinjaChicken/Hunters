@@ -24,20 +24,6 @@ AAIConductor::AAIConductor()
     TriggerVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerVolume"));
     TriggerVolume->SetupAttachment(RootComponent);
     TriggerVolume->SetGenerateOverlapEvents(true);
-
-    // Create some FSpeechOptions objects
-    FSpeechOptions option1;
-    option1.Entries.Add("Space", 0.5f);
-    option1.Entries.Add("We're", 1.0f);
-    option1.Entries.Add("Init?", 1.5f);
-
-    FSpeechOptions option2;
-    option2.Entries.Add("I'm", 0.5f);
-    option2.Entries.Add("Tim", 2.0f);
-
-    // Add the options to the TArray
-    SpeechOptions.Add(option1);
-    SpeechOptions.Add(option2);
 }
 
 // Called when the game starts or when spawned
@@ -54,6 +40,26 @@ void AAIConductor::BeginPlay()
 
     TriggerVolume->OnComponentBeginOverlap.AddDynamic(this, &AAIConductor::OnOverlapBegin);
     TriggerVolume->OnComponentEndOverlap.AddDynamic(this, &AAIConductor::OnOverlapEnd);
+
+    SpeechOptions.Reset();
+
+    // Create some FSpeechOptions objects
+    FSpeechOptions option1;
+    option1.Entries.Add("Space", 0.5f);
+    option1.Entries.Add("We're", 1.0f);
+    option1.Entries.Add("Init?", 1.5f);
+
+    FSpeechOptions option2;
+    option2.Entries.Add("I'm", 0.5f);
+    option2.Entries.Add("Tim", 2.0f);
+    option2.Entries.Add("Tims", 3.0f);
+    option2.Entries.Add("Tim3", 4.0f);
+    option2.Entries.Add("Tim2", 5.0f);
+    option2.Entries.Add("Tim1", 6.0f);
+
+    // Add the options to the TArray
+    SpeechOptions.Add(option1);
+    SpeechOptions.Add(option2);
 }
 
 // Called every frame

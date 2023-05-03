@@ -147,6 +147,30 @@ public:
 
 	void ResetTalking();
 
+	class UTimelineComponent* ConductorTalkingTimelineComponent;
+
+	UFUNCTION()
+    void ConductorTalkingTimelineComponentCallback(float val);
+    
+    UFUNCTION()
+    void ConductorTalkingTimelineComponentFinishedCallback();
+
+	TArray<int> WordCenters;
+
+	int ConductorTalkingIndex = 0;
+
+	class UTimelineComponent* PlayerTalkingTimelineComponent;
+
+	UFUNCTION()
+    void PlayerTalkingTimelineComponentCallback(float val);
+    
+    UFUNCTION()
+    void PlayerTalkingTimelineComponentFinishedCallback();
+
+	int PlayerTalkingIndex = 0;
+
+	bool bResetBall = false;
+
 public:
 	// Intro Section
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Intro")
@@ -160,7 +184,7 @@ public:
 
 	TArray<FString> AllIntroText = {"", "You know the plan.", "Get to the Front as fast as possible.", "And don't let the conductor catch you."};
 
-protected:
+public:
     class UTimelineComponent* IntroTimelineComponent;
  
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Intro")
@@ -177,4 +201,20 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Intro")
 	TSubclassOf<UCameraShakeBase> CameraShakeBase;
+
+public:
+	class UTimelineComponent* OutroTimelineComponent;
+
+	UFUNCTION()
+    void OutroTimelineComponentCallback(float val);
+    
+    UFUNCTION()
+    void OutroTimelineComponentFinishedCallback();
+
+	UFUNCTION()
+	void EndDemo();
+
+	float PlayerScore = 0.0f;
+
+	TArray<FString> AllOutroText = {"End of Act 1", FString("Score: ") + FString::SanitizeFloat(PlayerScore), "Thanks For Playing"};
 };

@@ -28,6 +28,7 @@
 #include "LevelSequenceActor.h"
 #include "Camera/CameraShakeBase.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Math/UnrealMathUtility.h"
 
 #include "GameFramework/PlayerController.h" // for APlayerController class
 
@@ -54,7 +55,10 @@ APlayerCharacter::APlayerCharacter()
 	// Mesh1P->SetRelativeRotation(FRotator(0.9f, -19.19f, 5.2f));
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
 
-	IntroTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("MyTimelineComponent"));
+	IntroTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("IntroTimelineComponent"));
+	ConductorTalkingTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("ConductorTalkingTimelineComponent"));
+	PlayerTalkingTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("PlayerTalkingTimelineComponent"));
+	OutroTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("OutroTimelineComponent"));
 }
 
 void APlayerCharacter::BeginPlay()
@@ -256,8 +260,6 @@ void APlayerCharacter::Talk(const FInputActionValue &Value)
 			return;
 		}
 
-		RespondTalking();
-
 		return;
 	}
 
@@ -356,11 +358,13 @@ void APlayerCharacter::StartTalkingMiniGame(AAIConductor *HitAIConductor)
 	FSpeechOptions SpeechOption = HitAIConductor->SpeechOptions[RandomIndex];
 
 	AllLines = SpeechOption.Entries.Array();
+	float TotalValue = 0;
 	// Create the text box widgets
 	for (TPair<FString, float> line : AllLines)
 	{
 		FString Key = line.Key;
 		float Value = line.Value;
+		TotalValue += Value;
 
 		// Create the text box widget
 		UTextBlock *TextBox = NewObject<UTextBlock>(this);
@@ -396,101 +400,170 @@ void APlayerCharacter::StartTalkingMiniGame(AAIConductor *HitAIConductor)
 
 	bCaptureInputs = true;
 
+	if (!ConductorTalkingTimelineComponent)
+	{
+		return;
+	}
+
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(
 		TimerHandle, [this, HitAIConductor]()
 		{
-			for (int i = 0; i < TextBlocks.Num(); i++)
+			for (int index = 0; index < TextBlocks.Num(); ++index)
 			{
-			FTimerHandle TimerHandle2;
-			GetWorldTimerManager().SetTimer(
-				TimerHandle2,
-				[this, HitAIConductor, i]() mutable
-				{
-					UGameplayStatics::PlaySoundAtLocation(GetWorld(), HitAIConductor->TalkSoundCue, HitAIConductor->GetActorLocation());
+				int c = TextBlocks.Num();
+				int k = index;
 
-					FVector2D TextBoxSize = TextBlocks[i]->GetDesiredSize();
+				int center = 0;
+				for (int i = 0; i < c; ++i) {
+					center += TextBlocks[i]->GetDesiredSize().X;
+				}
+				center /= 2;
 
-					const TArray<UPanelSlot *> Panels = Canvas->GetSlots();
-					for (UPanelSlot *Panel : Panels)
-					{
-						UCanvasPanelSlot *CanvasSlot = Cast<UCanvasPanelSlot>(Panel);
-						if (!CanvasSlot)
-						{
-							continue;
-						}
-							
-						UWidget *ChildWidget = CanvasSlot->Content;
-						if (!ChildWidget) {
-							continue;
-						}	
-						
-						if (!Cast<UBorder>(ChildWidget))
-						{
-							continue;
-						}
+				int distance = center;
+				for (int i = 0; i < k; ++i) {
+					distance -= TextBlocks[i]->GetDesiredSize().X;
+				}
 
-						CanvasSlot->SetPosition(FVector2D((i - ((TextBlocks.Num() - 1.0f) / 2.0f)) * TextBoxSize.X, 0.0f));
-						if (i == TextBlocks.Num() - 1) {
-							bRespondPhase = true;
-						}
-					}
-				},
-				AllLines[i].Value, false);
-			} },
+				// Adjust the distance for the center of the inputted card index
+				distance -= TextBlocks[k]->GetDesiredSize().X / 2;
+
+				WordCenters.Add(distance * -1);
+			}
+
+			// Bind the OnTimelineFloat function to the timeline's float track
+			FOnTimelineFloat TimelineFloat;
+			FOnTimelineEventStatic onTimelineFinishedCallback;
+			TimelineFloat.BindUFunction(this, "ConductorTalkingTimelineComponentCallback");
+			onTimelineFinishedCallback.BindUFunction(this, "ConductorTalkingTimelineComponentFinishedCallback");
+			ConductorTalkingTimelineComponent->AddInterpFloat(FloatCurve, TimelineFloat);
+			ConductorTalkingTimelineComponent->SetTimelineFinishedFunc(onTimelineFinishedCallback);
+			ConductorTalkingTimelineComponent->SetLooping(false);
+			ConductorTalkingTimelineComponent->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+			ConductorTalkingTimelineComponent->SetPlayRate(1.0f / AllLines[ConductorTalkingIndex].Value);
+			ConductorTalkingTimelineComponent->PlayFromStart(); },
 		0.1f, false);
+}
+
+void APlayerCharacter::ConductorTalkingTimelineComponentCallback(float val)
+{
+	const TArray<UPanelSlot *> Panels = Canvas->GetSlots();
+	for (UPanelSlot *Panel : Panels)
+	{
+		UCanvasPanelSlot *CanvasSlot = Cast<UCanvasPanelSlot>(Panel);
+		if (!CanvasSlot)
+		{
+			continue;
+		}
+
+		UWidget *ChildWidget = CanvasSlot->Content;
+		if (!ChildWidget)
+		{
+			continue;
+		}
+
+		if (!Cast<UBorder>(ChildWidget))
+		{
+			continue;
+		}
+
+		float ExponentialFunctionY = -100.0 * exp(-10.0 * pow(val - 0.5, 2.0));
+
+		CanvasSlot->SetPosition(FVector2D(FMath::Lerp(WordCenters[ConductorTalkingIndex], WordCenters[ConductorTalkingIndex + 1], val), ExponentialFunctionY));
+	}
+}
+
+void APlayerCharacter::ConductorTalkingTimelineComponentFinishedCallback()
+{
+	ConductorTalkingIndex++;
+	if (WordCenters.Num() <= ConductorTalkingIndex + 1)
+	{
+		bRespondPhase = true;
+		RespondTalking();
+		return;
+	}
+
+	ConductorTalkingTimelineComponent->SetPlayRate(1.0f / (AllLines[ConductorTalkingIndex].Value - AllLines[ConductorTalkingIndex - 1].Value));
+	ConductorTalkingTimelineComponent->PlayFromStart();
 }
 
 void APlayerCharacter::RespondTalking()
 {
 	bHasStartedTalking = true;
 
+	FOnTimelineFloat TimelineFloat;
+	FOnTimelineEventStatic onTimelineFinishedCallback;
+	TimelineFloat.BindUFunction(this, "PlayerTalkingTimelineComponentCallback");
+	onTimelineFinishedCallback.BindUFunction(this, "PlayerTalkingTimelineComponentFinishedCallback");
+	PlayerTalkingTimelineComponent->AddInterpFloat(FloatCurve, TimelineFloat);
+	PlayerTalkingTimelineComponent->SetTimelineFinishedFunc(onTimelineFinishedCallback);
+	PlayerTalkingTimelineComponent->SetLooping(false);
+	PlayerTalkingTimelineComponent->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+	PlayerTalkingTimelineComponent->SetPlayRate(1.0f / 2.0f);
+	bResetBall = true;
+	PlayerTalkingTimelineComponent->PlayFromStart();
+}
+
+void APlayerCharacter::PlayerTalkingTimelineComponentCallback(float val)
+{
 	const TArray<UPanelSlot *> Panels = Canvas->GetSlots();
-
-	for (int i = 0; i < TextBlocks.Num(); i++)
+	for (UPanelSlot *Panel : Panels)
 	{
-		FTimerHandle TimerHandle3;
-		GetWorldTimerManager().SetTimer(
-			TimerHandle3,
-			[this, i, Panels]() mutable
-			{
-				FVector2D TextBoxSize = TextBlocks[i]->GetDesiredSize();
+		UCanvasPanelSlot *CanvasSlot = Cast<UCanvasPanelSlot>(Panel);
+		if (!CanvasSlot)
+		{
+			continue;
+		}
 
-				for (UPanelSlot *Panel : Panels)
-				{
-					UCanvasPanelSlot *CanvasSlot = Cast<UCanvasPanelSlot>(Panel);
-					if (!CanvasSlot)
-					{
-						continue;
-					}
+		UWidget *ChildWidget = CanvasSlot->Content;
+		if (!ChildWidget)
+		{
+			continue;
+		}
 
-					UWidget *ChildWidget = CanvasSlot->Content;
-					if (!ChildWidget)
-					{
-						continue;
-					}
+		if (!Cast<UBorder>(ChildWidget))
+		{
+			continue;
+		}
 
-					if (!Cast<UBorder>(ChildWidget))
-					{
-						continue;
-					}
-
-					CanvasSlot->SetPosition(FVector2D((i - ((TextBlocks.Num() - 1) / 2.0f)) * TextBoxSize.X, 0.0f));
-					if (i == TextBlocks.Num() - 1)
-					{
-						FTimerHandle TimerHandle4;
-						GetWorldTimerManager().SetTimer(
-							TimerHandle4,
-							[this]()
-							{
-								ResetTalking();
-							},
-							1.0f, false);
-					}
-				}
-			},
-			AllLines[i].Value, false);
+		if (bResetBall)
+		{
+			float ExponentialFunctionY = -200.0 * exp(-10.0 * pow(val - 0.5, 2.0));
+			CanvasSlot->SetPosition(FVector2D(FMath::Lerp(WordCenters[ConductorTalkingIndex], WordCenters[PlayerTalkingIndex], val), ExponentialFunctionY));
+		}
+		else
+		{
+			float ExponentialFunctionY = -100.0 * exp(-10.0 * pow(val - 0.5, 2.0));
+			CanvasSlot->SetPosition(FVector2D(FMath::Lerp(WordCenters[PlayerTalkingIndex], WordCenters[PlayerTalkingIndex + 1], val), ExponentialFunctionY));
+		}
 	}
+}
+
+void APlayerCharacter::PlayerTalkingTimelineComponentFinishedCallback()
+{
+	if (!bResetBall)
+	{
+		PlayerTalkingIndex++;
+	}
+
+	if (WordCenters.Num() <= PlayerTalkingIndex + 1)
+	{
+		ResetTalking();
+		return;
+	}
+
+	bResetBall = false;
+	if (PlayerTalkingIndex - 1 >= 0)
+	{
+		PlayerTalkingTimelineComponent->SetPlayRate(1.0f / (AllLines[PlayerTalkingIndex].Value - AllLines[PlayerTalkingIndex - 1].Value));
+	}
+	else
+	{
+		PlayerTalkingTimelineComponent->SetPlayRate(1.0f / AllLines[PlayerTalkingIndex].Value);
+	}
+	PlayerTalkingTimelineComponent->PlayFromStart();
 }
 
 void APlayerCharacter::ResetTalking()
@@ -513,9 +586,63 @@ void APlayerCharacter::ResetTalking()
 	bRespondPhase = false;
 	bHasStartedTalking = false;
 	bCanBeScored = false;
+	bResetBall = false;
 
 	HorizontalBox->ClearChildren();
 	AllLines.Empty();
 	TextBlocks.Empty();
 	CapturedInputTimes.Empty();
+	WordCenters.Empty();
+
+	PlayerTalkingIndex = 0;
+	ConductorTalkingIndex = 0;
+}
+
+void APlayerCharacter::EndDemo()
+{
+	if (OutroTimelineComponent)
+	{
+		IntroWidget = CreateWidget<UUserWidget>(GetWorld(), IntroUserWidget);
+		if (IntroWidget)
+		{
+			IntroWidget->AddToViewport();
+
+			IntroText = Cast<UTextBlock>(IntroWidget->GetWidgetFromName(FName("IntroText")));
+		}
+
+		// Bind the OnTimelineFloat function to the timeline's float track
+		FOnTimelineFloat TimelineFloat;
+		FOnTimelineEventStatic onTimelineFinishedCallback;
+		TimelineFloat.BindUFunction(this, "OutroTimelineComponentCallback");
+		onTimelineFinishedCallback.BindUFunction(this, "OutroTimelineComponentFinishedCallback");
+		OutroTimelineComponent->AddInterpFloat(FloatCurve, TimelineFloat);
+		OutroTimelineComponent->SetTimelineFinishedFunc(onTimelineFinishedCallback);
+		const float Length = 18.0f;
+		OutroTimelineComponent->SetPlayRate(1.0f / Length);
+		OutroTimelineComponent->SetLooping(false);
+		OutroTimelineComponent->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+		OutroTimelineComponent->PlayFromStart();
+	}
+}
+
+void APlayerCharacter::OutroTimelineComponentCallback(float val)
+{
+	TArray<AActor *> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APostProcessVolume::StaticClass(), FoundActors);
+
+	APostProcessVolume *PostProcessVolume = Cast<APostProcessVolume>(FoundActors[0]);
+	PostProcessVolume->Settings.VignetteIntensity = UKismetMathLibrary::MapRangeClamped(val, 0, 1, 1, 1000);
+
+	if (IntroText)
+	{
+		int32 TextIndex = UKismetMathLibrary::MapRangeClamped(val, 0.0f, 1.0f, 0.0f, ((float)AllOutroText.Num()) - 0.001f);
+
+		IntroText->SetText(FText::FromString(AllOutroText[TextIndex]));
+	}
+}
+
+
+void APlayerCharacter::OutroTimelineComponentFinishedCallback()
+{
 }

@@ -9,7 +9,8 @@ enum class ERoomType : uint8
 {
     Straight UMETA(DisplayName = "Straight"),
     Right UMETA(DisplayName = "Right"),
-    Left UMETA(DisplayName = "Left")
+    Left UMETA(DisplayName = "Left"),
+    Checkpoint UMETA(DisplayName = "Checkpoint")
 };
 
 UCLASS()

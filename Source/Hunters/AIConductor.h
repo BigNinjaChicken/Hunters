@@ -63,6 +63,7 @@ protected:
 	float BossRoomVignetteIntensity = 1.6f;
 
 public:
+	UPROPERTY(VisibleAnywhere, Category = "Talking")
 	TArray<FSpeechOptions> SpeechOptions;
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
