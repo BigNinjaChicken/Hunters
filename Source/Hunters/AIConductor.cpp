@@ -45,21 +45,71 @@ void AAIConductor::BeginPlay()
 
     // Create some FSpeechOptions objects
     FSpeechOptions option1;
-    option1.Entries.Add("Space", 0.5f);
-    option1.Entries.Add("We're", 1.0f);
-    option1.Entries.Add("Init?", 1.5f);
+    option1.Entries.Add("Time", 0.5f);
+    option1.Entries.Add("To", 1.5f);
+    option1.Entries.Add("Ride", 2.0f);
 
     FSpeechOptions option2;
-    option2.Entries.Add("I'm", 0.5f);
-    option2.Entries.Add("Tim", 2.0f);
-    option2.Entries.Add("Tims", 3.0f);
-    option2.Entries.Add("Tim3", 4.0f);
-    option2.Entries.Add("Tim2", 5.0f);
-    option2.Entries.Add("Tim1", 6.0f);
+    option2.Entries.Add("Let", 0.5f);
+    option2.Entries.Add("Us", 1.5f);
+    option2.Entries.Add("Begin", 2.5f);
+
+    FSpeechOptions option3;
+    option3.Entries.Add("Tickets", 0.5f);
+    option3.Entries.Add("Pl", 1.5f);
+    option3.Entries.Add("Please", 2.0f);
+
+    FSpeechOptions option4;
+    option4.Entries.Add("Where", 0.5f);
+    option4.Entries.Add("are", 1.5f);
+    option4.Entries.Add("you", 2.5f);
+    option4.Entries.Add("headed", 2.5f);
+
+    FSpeechOptions option5;
+    option5.Entries.Add("Where", 0.5f);
+    option5.Entries.Add("are", 1.5f);
+    option5.Entries.Add("you", 2.0f);
+    option5.Entries.Add("headed", 2.5f);
+
+    FSpeechOptions option6;
+    option6.Entries.Add("Are", 0.5f);
+    option6.Entries.Add("you", 1.5f);
+    option6.Entries.Add("enjoying", 2.5f);
+    option6.Entries.Add("the", 3.0f);
+    option6.Entries.Add("ride", 3.5f);
+
+    FSpeechOptions option7;
+    option7.Entries.Add("I", 0.5f);
+    option7.Entries.Add("love", 1.5f);
+    option7.Entries.Add("trains", 2.5f);
+
+    FSpeechOptions option8;
+    option8.Entries.Add("I", 0.5f);
+    option8.Entries.Add("wonder", 1.5f);
+    option8.Entries.Add("where", 2.0f);
+    option8.Entries.Add("the", 3.0f);
+    option8.Entries.Add("con", 3.5f);
+    option8.Entries.Add("ductor", 4.0f);
+    option8.Entries.Add("went", 4.5f);
+
+    FSpeechOptions option9;
+    option9.Entries.Add("Have", 0.5f);
+    option9.Entries.Add("you", 1.5f);
+    option9.Entries.Add("seen", 2.5f);
+    option9.Entries.Add("the", 3.0f);
+    option9.Entries.Add("dining", 3.5f);
+    option9.Entries.Add("car", 4.0f);
 
     // Add the options to the TArray
     SpeechOptions.Add(option1);
     SpeechOptions.Add(option2);
+    SpeechOptions.Add(option3);
+    SpeechOptions.Add(option4);
+    SpeechOptions.Add(option5);
+    SpeechOptions.Add(option6);
+    SpeechOptions.Add(option7);
+    SpeechOptions.Add(option8);
+    SpeechOptions.Add(option9);
 }
 
 // Called every frame

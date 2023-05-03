@@ -66,8 +66,26 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction *TalkAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction *QuitAction;
+
 	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class USoundCue *TalkSoundCue;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class USoundCue *EnemySoundCue;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class USoundCue *TrainAmbianceSoundCue;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class USoundCue *PianoSoundCue;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class USoundCue *GoldSoundCue;
+
+	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class USoundCue *WinSoundCue;
 
 public:
 	APlayerCharacter();
@@ -95,9 +113,11 @@ protected:
 	float DefaultMaxWalkingSpeed;
 
 	UPROPERTY(EditAnywhere, Category = Input, meta = (ToolTip = "Amount multiplied by movement speed while sprinting is active."))
-	float SprintingMultiplier = 1.5;
+	float SprintingMultiplier = 1.1;
 
 	void Talk(const FInputActionValue &Value);
+
+	void Quit(const FInputActionValue &Value);
 
 protected:
 	// APawn interface
@@ -114,6 +134,7 @@ public:
 	// Talking Minigame
 	TArray<FHitResult> MultiSphereTrace();
 
+	class AAIConductor *AIConductorHit;
 	void StartTalkingMiniGame(AAIConductor *HitAIConductor);
 
 	void RespondTalking();
@@ -121,7 +142,9 @@ public:
 	bool bRespondPhase = false;
 	bool bHasStartedTalking = false;
 	bool bCanBeScored = false;
-	TArray<float> CapturedInputTimes;
+	bool bResetBall = false;
+	bool bHasScored = false;
+	bool bIncreasedOnce = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Talking")
 	TSubclassOf<UUserWidget> TalkingMiniGame;
@@ -129,13 +152,10 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Talking")
 	float SavedMaxWalkSpeed;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Talking")
 	float SavedVignetteIntensity;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Talking")
 	float BossRoomMaxWalkSpeed = 300.0f;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Talking")
 	float BossRoomVignetteIntensity = 1.6f;
 
@@ -148,28 +168,28 @@ public:
 	void ResetTalking();
 
 	class UTimelineComponent* ConductorTalkingTimelineComponent;
-
+	class UTimelineComponent* PlayerTalkingTimelineComponent;
 	UFUNCTION()
     void ConductorTalkingTimelineComponentCallback(float val);
-    
     UFUNCTION()
     void ConductorTalkingTimelineComponentFinishedCallback();
+	UFUNCTION()
+    void PlayerTalkingTimelineComponentCallback(float val);
+    UFUNCTION()
+    void PlayerTalkingTimelineComponentFinishedCallback();
 
 	TArray<int> WordCenters;
 
 	int ConductorTalkingIndex = 0;
-
-	class UTimelineComponent* PlayerTalkingTimelineComponent;
-
-	UFUNCTION()
-    void PlayerTalkingTimelineComponentCallback(float val);
-    
-    UFUNCTION()
-    void PlayerTalkingTimelineComponentFinishedCallback();
-
 	int PlayerTalkingIndex = 0;
 
-	bool bResetBall = false;
+	UPROPERTY(VisibleAnywhere, Category = "Talking")
+	float TalkingTotalScore = 0;
+	float TimeingValue = 0;
+
+	// the lower the threshold the easier the talking minigame
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Talking")
+	float TalkingMinigameThreshold = 3.0f;
 
 public:
 	// Intro Section
@@ -214,7 +234,8 @@ public:
 	UFUNCTION()
 	void EndDemo();
 
+	UPROPERTY(VisibleAnywhere, Category = "Talking")
 	float PlayerScore = 0.0f;
 
-	TArray<FString> AllOutroText = {"End of Act 1", FString("Score: ") + FString::SanitizeFloat(PlayerScore), "Thanks For Playing"};
+	TArray<FString> AllOutroText;
 };

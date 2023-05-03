@@ -89,6 +89,8 @@ void APlayerCharacter::BeginPlay()
 
 	if (IsLocallyControlled())
 	{
+		UGameplayStatics::PlaySound2D(GetWorld(), PianoSoundCue);
+
 		// create widget
 		TalkingMiniGameWidget = CreateWidget<UUserWidget>(GetWorld(), TalkingMiniGame);
 		if (TalkingMiniGameWidget)
@@ -153,6 +155,8 @@ void APlayerCharacter::IntroTimelineComponentCallback(float interpolatedVal)
 
 void APlayerCharacter::IntroTimelineComponentFinishedCallback()
 {
+	UGameplayStatics::PlaySound2D(GetWorld(), TrainAmbianceSoundCue);
+
 	IntroWidget->SetVisibility(ESlateVisibility::Collapsed);
 	ActWidget->SetVisibility(ESlateVisibility::Collapsed);
 
@@ -191,6 +195,8 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent *PlayerIn
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Sprint);
 
 		EnhancedInputComponent->BindAction(TalkAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Talk);
+
+		EnhancedInputComponent->BindAction(QuitAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Quit);
 	}
 }
 
@@ -241,6 +247,11 @@ void APlayerCharacter::Sprint(const FInputActionValue &Value)
 	bIsSprinting = !bIsSprinting;
 }
 
+void APlayerCharacter::Quit(const FInputActionValue &Value)
+{
+	UKismetSystemLibrary::QuitGame(GetWorld(), Cast<APlayerController>(Controller), EQuitPreference::Quit, true);
+}
+
 void APlayerCharacter::Talk(const FInputActionValue &Value)
 {
 	if (!TalkSoundCue)
@@ -254,13 +265,12 @@ void APlayerCharacter::Talk(const FInputActionValue &Value)
 		AActor *SelfActor = GetOwner();
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), TalkSoundCue, SelfActor->GetActorLocation());
 
-		if (bHasStartedTalking)
+		if (bIncreasedOnce && !bHasScored)
 		{
-
-			return;
+			TalkingTotalScore -= FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(1.0f, -1.0f), TimeingValue);
+			UE_LOG(LogTemp, Warning, TEXT("%f"), TalkingTotalScore)
+			bHasScored = true;
 		}
-
-		return;
 	}
 
 	if (bCaptureInputs)
@@ -281,13 +291,13 @@ void APlayerCharacter::Talk(const FInputActionValue &Value)
 			return;
 		}
 
-		AAIConductor *HitAIConductor = Cast<AAIConductor>(HitActor);
-		if (!HitAIConductor)
+		AIConductorHit = Cast<AAIConductor>(HitActor);
+		if (!AIConductorHit)
 		{
 			return;
 		}
 
-		StartTalkingMiniGame(HitAIConductor);
+		StartTalkingMiniGame(AIConductorHit);
 		break;
 	}
 }
@@ -382,6 +392,10 @@ void APlayerCharacter::StartTalkingMiniGame(AAIConductor *HitAIConductor)
 		TextBlocks.Add(TextBox);
 	}
 
+	ECameraShakePlaySpace PlaySpace = ECameraShakePlaySpace::CameraLocal;
+	APlayerCameraManager *CameraManager = GetWorld()->GetFirstPlayerController()->PlayerCameraManager;
+	CameraManager->StartCameraShake(CameraShakeBase, 1.0f, PlaySpace, FRotator(0.0f, 0.0f, 0.0f));
+
 	TalkingMiniGameWidget->SetVisibility(ESlateVisibility::Visible);
 
 	TArray<AActor *> FoundActors;
@@ -441,6 +455,7 @@ void APlayerCharacter::StartTalkingMiniGame(AAIConductor *HitAIConductor)
 			ConductorTalkingTimelineComponent->SetLooping(false);
 			ConductorTalkingTimelineComponent->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
 
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), EnemySoundCue, AIConductorHit->GetActorLocation());
 			ConductorTalkingTimelineComponent->SetPlayRate(1.0f / AllLines[ConductorTalkingIndex].Value);
 			ConductorTalkingTimelineComponent->PlayFromStart(); },
 		0.1f, false);
@@ -476,6 +491,8 @@ void APlayerCharacter::ConductorTalkingTimelineComponentCallback(float val)
 
 void APlayerCharacter::ConductorTalkingTimelineComponentFinishedCallback()
 {
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), EnemySoundCue, AIConductorHit->GetActorLocation());
+
 	ConductorTalkingIndex++;
 	if (WordCenters.Num() <= ConductorTalkingIndex + 1)
 	{
@@ -490,8 +507,6 @@ void APlayerCharacter::ConductorTalkingTimelineComponentFinishedCallback()
 
 void APlayerCharacter::RespondTalking()
 {
-	bHasStartedTalking = true;
-
 	FOnTimelineFloat TimelineFloat;
 	FOnTimelineEventStatic onTimelineFinishedCallback;
 	TimelineFloat.BindUFunction(this, "PlayerTalkingTimelineComponentCallback");
@@ -508,6 +523,7 @@ void APlayerCharacter::RespondTalking()
 
 void APlayerCharacter::PlayerTalkingTimelineComponentCallback(float val)
 {
+	TimeingValue = val;
 	const TArray<UPanelSlot *> Panels = Canvas->GetSlots();
 	for (UPanelSlot *Panel : Panels)
 	{
@@ -538,11 +554,19 @@ void APlayerCharacter::PlayerTalkingTimelineComponentCallback(float val)
 			float ExponentialFunctionY = -100.0 * exp(-10.0 * pow(val - 0.5, 2.0));
 			CanvasSlot->SetPosition(FVector2D(FMath::Lerp(WordCenters[PlayerTalkingIndex], WordCenters[PlayerTalkingIndex + 1], val), ExponentialFunctionY));
 		}
+
+		if (val > 0.5 && !bIncreasedOnce)
+		{
+			bIncreasedOnce = true;
+			bHasScored = false;
+		}
 	}
 }
 
 void APlayerCharacter::PlayerTalkingTimelineComponentFinishedCallback()
 {
+	bIncreasedOnce = false;
+
 	if (!bResetBall)
 	{
 		PlayerTalkingIndex++;
@@ -550,6 +574,19 @@ void APlayerCharacter::PlayerTalkingTimelineComponentFinishedCallback()
 
 	if (WordCenters.Num() <= PlayerTalkingIndex + 1)
 	{
+		if (TalkingTotalScore > TalkingMinigameThreshold * WordCenters.Num())
+		{
+			PlayerScore += TalkingTotalScore / WordCenters.Num();
+
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), GoldSoundCue, AIConductorHit->GetActorLocation());
+
+			AIConductorHit->Destroy();
+
+			ECameraShakePlaySpace PlaySpace = ECameraShakePlaySpace::CameraLocal;
+			APlayerCameraManager *CameraManager = GetWorld()->GetFirstPlayerController()->PlayerCameraManager;
+			CameraManager->StartCameraShake(CameraShakeBase, 1.0f, PlaySpace, FRotator(0.0f, 0.0f, 0.0f));
+		}
+
 		ResetTalking();
 		return;
 	}
@@ -587,19 +624,29 @@ void APlayerCharacter::ResetTalking()
 	bHasStartedTalking = false;
 	bCanBeScored = false;
 	bResetBall = false;
+	bHasScored = false;
+	bIncreasedOnce = false;
 
 	HorizontalBox->ClearChildren();
-	AllLines.Empty();
-	TextBlocks.Empty();
-	CapturedInputTimes.Empty();
-	WordCenters.Empty();
+	AllLines.Reset();
+	TextBlocks.Reset();
+	WordCenters.Reset();
 
 	PlayerTalkingIndex = 0;
 	ConductorTalkingIndex = 0;
+
+	TalkingTotalScore = 0;
+	TimeingValue = 0;
 }
 
 void APlayerCharacter::EndDemo()
 {
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), WinSoundCue, GetActorLocation());
+
+	AllOutroText.Add(FString("ACT 1 EL FEINE"));
+	AllOutroText.Add(FString("Score: ") + FString::SanitizeFloat((int)(PlayerScore * 1000)));
+	AllOutroText.Add(FString("Thanks For Playing"));
+
 	if (OutroTimelineComponent)
 	{
 		IntroWidget = CreateWidget<UUserWidget>(GetWorld(), IntroUserWidget);
@@ -642,7 +689,7 @@ void APlayerCharacter::OutroTimelineComponentCallback(float val)
 	}
 }
 
-
 void APlayerCharacter::OutroTimelineComponentFinishedCallback()
 {
+	UGameplayStatics::OpenLevel(GetWorld(), FName("FirstPersonMap"), true);
 }

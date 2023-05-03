@@ -20,7 +20,7 @@ ARoomPlacement::ARoomPlacement()
 	RoomEntrenceBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("RoomEntrenceBoxComponent"));
 	RoomEntrenceBoxComponent->SetupAttachment(RootComponent);
 	RoomEntrenceBoxComponent->SetGenerateOverlapEvents(true);
-	RoomEntrenceBoxComponent->SetBoxExtent(FVector(150.0f, 150.0f, 150.0f));
+	RoomEntrenceBoxComponent->SetBoxExtent(FVector(350.0f, 350.0f, 350.0f));
 }
 
 // Called when the game starts or when spawned
