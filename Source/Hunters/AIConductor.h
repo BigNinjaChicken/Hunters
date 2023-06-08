@@ -66,6 +66,10 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Talking")
 	TArray<FSpeechOptions> SpeechOptions;
 
-	UPROPERTY(EditAnywhere, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Sound", meta = (AllowPrivateAccess = "true"))
 	class USoundCue *TalkSoundCue;
+
+public:
+	UPROPERTY(EditAnywhere, Category = General, meta = (AllowPrivateAccess = "true"))
+	bool bSpawnsMainEnemy = false;
 };

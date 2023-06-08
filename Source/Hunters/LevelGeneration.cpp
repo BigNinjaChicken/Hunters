@@ -94,7 +94,6 @@ void ALevelGeneration::BeginPlay()
 
     // Generate the level by placing rooms
     int RoomIndex;
-    int BossRoomAmount = 2; // Set the desired number of boss rooms
     int BossRoomInterval = RoomAmount / BossRoomAmount;
     for (RoomIndex = RoomAmount; RoomIndex > 0; RoomIndex--)
     {

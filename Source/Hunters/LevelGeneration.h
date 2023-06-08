@@ -51,6 +51,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Generation", meta = (AllowPrivateAccess = "true"))
     TSubclassOf<AAIConductor> AIConductorBlueprint;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Generation", meta = (AllowPrivateAccess = "true"))
+    int BossRoomAmount = 2;
+
     void SpawnAI();
 
     /** Timer handle to start the game */

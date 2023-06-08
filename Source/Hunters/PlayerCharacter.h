@@ -220,6 +220,9 @@ public:
 	class ULevelSequence* LevelSequence;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Intro")
+	class ULevelSequence* MainEnemyLevelSequence;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Intro")
 	TSubclassOf<UCameraShakeBase> CameraShakeBase;
 
 public:
@@ -233,6 +236,9 @@ public:
 
 	UFUNCTION()
 	void EndDemo();
+
+	UFUNCTION()
+	void LoseDemo();
 
 	UPROPERTY(VisibleAnywhere, Category = "Talking")
 	float PlayerScore = 0.0f;

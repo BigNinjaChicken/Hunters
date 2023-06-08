@@ -29,6 +29,7 @@
 #include "Camera/CameraShakeBase.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Math/UnrealMathUtility.h"
+#include "MainEnemyCharacter.h"
 
 #include "GameFramework/PlayerController.h" // for APlayerController class
 
@@ -267,7 +268,7 @@ void APlayerCharacter::Talk(const FInputActionValue &Value)
 
 		if (bIncreasedOnce && !bHasScored)
 		{
-			TalkingTotalScore -= FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(1.0f, -1.0f), TimeingValue);
+			TalkingTotalScore += FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(-1.0f, 1.0f), TimeingValue);
 			UE_LOG(LogTemp, Warning, TEXT("%f"), TalkingTotalScore)
 			bHasScored = true;
 		}
@@ -580,6 +581,26 @@ void APlayerCharacter::PlayerTalkingTimelineComponentFinishedCallback()
 
 			UGameplayStatics::PlaySoundAtLocation(GetWorld(), GoldSoundCue, AIConductorHit->GetActorLocation());
 
+			if (AIConductorHit->bSpawnsMainEnemy)
+			{
+				if (MainEnemyLevelSequence)
+				{
+					ALevelSequenceActor *LevelSequenceActor;
+					ULevelSequencePlayer *LevelSequencePlayer = ULevelSequencePlayer::CreateLevelSequencePlayer(GetWorld(), MainEnemyLevelSequence, FMovieSceneSequencePlaybackSettings(), LevelSequenceActor);
+					if (LevelSequencePlayer)
+					{
+						LevelSequencePlayer->Play();
+
+						AMainEnemyCharacter *Enemy = Cast<AMainEnemyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AMainEnemyCharacter::StaticClass()));
+
+						if (Enemy)
+						{
+							Enemy->StartChase();
+						}
+					}
+				}
+			}
+
 			AIConductorHit->Destroy();
 
 			ECameraShakePlaySpace PlaySpace = ECameraShakePlaySpace::CameraLocal;
@@ -646,6 +667,39 @@ void APlayerCharacter::EndDemo()
 	AllOutroText.Add(FString("ACT 1 EL FEINE"));
 	AllOutroText.Add(FString("Score: ") + FString::SanitizeFloat((int)(PlayerScore * 1000)));
 	AllOutroText.Add(FString("Thanks For Playing"));
+
+	if (OutroTimelineComponent)
+	{
+		IntroWidget = CreateWidget<UUserWidget>(GetWorld(), IntroUserWidget);
+		if (IntroWidget)
+		{
+			IntroWidget->AddToViewport();
+
+			IntroText = Cast<UTextBlock>(IntroWidget->GetWidgetFromName(FName("IntroText")));
+		}
+
+		// Bind the OnTimelineFloat function to the timeline's float track
+		FOnTimelineFloat TimelineFloat;
+		FOnTimelineEventStatic onTimelineFinishedCallback;
+		TimelineFloat.BindUFunction(this, "OutroTimelineComponentCallback");
+		onTimelineFinishedCallback.BindUFunction(this, "OutroTimelineComponentFinishedCallback");
+		OutroTimelineComponent->AddInterpFloat(FloatCurve, TimelineFloat);
+		OutroTimelineComponent->SetTimelineFinishedFunc(onTimelineFinishedCallback);
+		const float Length = 18.0f;
+		OutroTimelineComponent->SetPlayRate(1.0f / Length);
+		OutroTimelineComponent->SetLooping(false);
+		OutroTimelineComponent->SetTimelineLengthMode(ETimelineLengthMode::TL_LastKeyFrame);
+
+		OutroTimelineComponent->PlayFromStart();
+	}
+}
+
+
+void APlayerCharacter::LoseDemo()
+{
+	AllOutroText.Add(FString("The Conductor Caught You!"));
+	AllOutroText.Add(FString("Score: ") + FString::SanitizeFloat((int)(PlayerScore * 1000)));
+	AllOutroText.Add(FString("Try to stay one step ahead of him next time."));
 
 	if (OutroTimelineComponent)
 	{
