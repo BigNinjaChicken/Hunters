@@ -1,8 +1,15 @@
 # Express Polar (Hunters)
 
+### Background
+
 This project ranked first place at the [Miami Univeristy Design Jam Spring 2023](https://dti.squarespace.com/designjam#:~:text=Express%20Polar "Miami Univeristy Design Jam Spring 2023").
 
 In Express Polar, you race through a randomly-generated train, engaging in rhythm minigames and fleeing from the ever-growing threat posed by the train conductor.
+
+### Systems
+
+- This project does include EOS integration that allows the game to interact with online systems and the EOS overlay upon player login on the main screen.
+- All assets were made by me (Frazier K. [BigNinjaChicken]) and randomly generated in the level to ensure a new game during each game session.
 
 ## Important Links
 
